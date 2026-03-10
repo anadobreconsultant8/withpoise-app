@@ -23,7 +23,7 @@ export default function PrivacyPage() {
               withPOISE is operated by Ana Dobre, a sole trader registered in Romania. We are the data controller for personal data collected through this Service.
             </p>
             <p>
-              Contact: <a href="mailto:ana@withpoise.com">ana@withpoise.com</a>
+              Contact: <a href="mailto:hello@withpoise.net">hello@withpoise.net</a>
             </p>
           </section>
 
@@ -143,7 +143,7 @@ export default function PrivacyPage() {
               <li><strong>Restriction</strong> — request that we limit how we process your data</li>
             </ul>
             <p>
-              To exercise any of these rights, email us at <a href="mailto:ana@withpoise.com">ana@withpoise.com</a>. We will respond within 30 days.
+              To exercise any of these rights, email us at <a href="mailto:hello@withpoise.net">hello@withpoise.net</a>. We will respond within 30 days.
             </p>
             <p>
               You also have the right to lodge a complaint with the Romanian data protection authority (ANSPDCP) at <a href="https://www.dataprotection.ro" target="_blank" rel="noopener noreferrer">dataprotection.ro</a>.
@@ -153,7 +153,7 @@ export default function PrivacyPage() {
           <section>
             <h2>7. Data Security</h2>
             <p>
-              We implement appropriate technical and organizational measures to protect your personal data, including password hashing (bcrypt), encrypted data transmission (TLS/HTTPS), and access controls. No system is 100% secure — if you suspect a breach, contact us immediately at <a href="mailto:ana@withpoise.com">ana@withpoise.com</a>.
+              We implement appropriate technical and organizational measures to protect your personal data, including password hashing (bcrypt), encrypted data transmission (TLS/HTTPS), and access controls. No system is 100% secure — if you suspect a breach, contact us immediately at <a href="mailto:hello@withpoise.net">hello@withpoise.net</a>.
             </p>
           </section>
 
@@ -219,7 +219,7 @@ export default function PrivacyPage() {
             <h2>12. Contact</h2>
             <p>
               For any privacy-related questions or requests, contact us at:<br />
-              <a href="mailto:ana@withpoise.com">ana@withpoise.com</a>
+              <a href="mailto:hello@withpoise.net">hello@withpoise.net</a>
             </p>
           </section>
 

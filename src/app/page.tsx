@@ -342,7 +342,7 @@ export default function LandingPage() {
           <div className="flex items-center gap-6">
             <Link href="/pricing" className="hover:text-[var(--color-text)] transition-colors">Pricing</Link>
             <Link href="/login" className="hover:text-[var(--color-text)] transition-colors">Sign in</Link>
-            <a href="mailto:ana@withpoise.com" className="hover:text-[var(--color-text)] transition-colors">Support</a>
+            <a href="mailto:hello@withpoise.net" className="hover:text-[var(--color-text)] transition-colors">Support</a>
             <Link href="/terms" className="hover:text-[var(--color-text)] transition-colors">Terms</Link>
             <Link href="/privacy" className="hover:text-[var(--color-text)] transition-colors">Privacy</Link>
           </div>

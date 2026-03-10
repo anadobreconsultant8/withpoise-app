@@ -34,7 +34,7 @@ export default function TermsPage() {
           <section>
             <h2>3. Account Registration</h2>
             <p>
-              You must provide a valid email address and a secure password to create an account. You are responsible for maintaining the confidentiality of your credentials and for all activity that occurs under your account. You must notify us immediately at <a href="mailto:ana@withpoise.com">ana@withpoise.com</a> if you suspect unauthorized access.
+              You must provide a valid email address and a secure password to create an account. You are responsible for maintaining the confidentiality of your credentials and for all activity that occurs under your account. You must notify us immediately at <a href="mailto:hello@withpoise.net">hello@withpoise.net</a> if you suspect unauthorized access.
             </p>
             <p>
               You must be at least 18 years old and have the legal capacity to enter into a contract to use the Service.
@@ -57,7 +57,7 @@ export default function TermsPage() {
           <section>
             <h2>5. Refund Policy</h2>
             <p>
-              We offer a 7-day money-back guarantee on all subscription plans from the date of first payment. To request a refund, contact us at <a href="mailto:ana@withpoise.com">ana@withpoise.com</a> within 7 days of your purchase. One-time credit packs are non-refundable once credits have been used.
+              We offer a 7-day money-back guarantee on all subscription plans from the date of first payment. To request a refund, contact us at <a href="mailto:hello@withpoise.net">hello@withpoise.net</a> within 7 days of your purchase. One-time credit packs are non-refundable once credits have been used.
             </p>
           </section>
 
@@ -137,7 +137,7 @@ export default function TermsPage() {
           <section>
             <h2>14. Contact</h2>
             <p>
-              For questions about these Terms, contact us at <a href="mailto:ana@withpoise.com">ana@withpoise.com</a>.
+              For questions about these Terms, contact us at <a href="mailto:hello@withpoise.net">hello@withpoise.net</a>.
             </p>
           </section>
 

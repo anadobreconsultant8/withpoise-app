@@ -135,7 +135,7 @@ export default function PricingPage() {
           <p className="text-sm text-[var(--color-text-muted)]">
             Need a custom plan?{' '}
             <a
-              href="mailto:ana@withpoise.com"
+              href="mailto:hello@withpoise.net"
               className="text-[var(--color-primary)] hover:underline"
             >
               Contact us
