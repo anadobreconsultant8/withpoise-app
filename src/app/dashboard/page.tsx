@@ -5,10 +5,11 @@ import { useSession } from 'next-auth/react'
 import { useSearchParams } from 'next/navigation'
 import {
   Zap, ChevronDown, ChevronRight, Copy, Check, RotateCcw,
-  Clock, Loader2, AlertCircle, Sparkles
+  Clock, Loader2, AlertCircle, Sparkles, X, Plus
 } from 'lucide-react'
 import { Navbar } from '@/components/navbar'
 import { OBJECTION_CATEGORIES, TONES, RELATIONSHIP_LEVELS, OBJECTIVES } from '@/lib/objection-types'
+import { CREDIT_PACKS } from '@/lib/plans'
 
 interface UserData {
   id: string
@@ -53,6 +54,10 @@ export default function DashboardPage() {
   // History
   const [history, setHistory] = useState<HistoryItem[]>([])
 
+  // Credits modal
+  const [showCreditsModal, setShowCreditsModal] = useState(false)
+  const [buyingPack, setBuyingPack] = useState<string | null>(null)
+
   const fetchUser = useCallback(async () => {
     const res = await fetch('/api/user')
     if (res.ok) setUser(await res.json())
@@ -70,9 +75,10 @@ export default function DashboardPage() {
 
   // Show success toast if redirected from Stripe
   const upgraded = searchParams.get('upgraded')
+  const creditsAdded = searchParams.get('credits_added')
   useEffect(() => {
-    if (upgraded) fetchUser()
-  }, [upgraded, fetchUser])
+    if (upgraded || creditsAdded) fetchUser()
+  }, [upgraded, creditsAdded, fetchUser])
 
   async function handleGenerate() {
     if (!selectedObjection) {
@@ -143,6 +149,23 @@ export default function DashboardPage() {
 
   const noCredits = user ? user.creditsLeft <= 0 : false
 
+  async function handleBuyCredits(priceId: string, packId: string) {
+    setBuyingPack(packId)
+    try {
+      const res = await fetch('/api/stripe/credits', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ priceId }),
+      })
+      const data = await res.json()
+      if (data.url) window.location.href = data.url
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setBuyingPack(null)
+    }
+  }
+
   async function handleBillingPortal() {
     const res = await fetch('/api/stripe/portal', { method: 'POST' })
     const data = await res.json()
@@ -169,6 +192,13 @@ export default function DashboardPage() {
       {upgraded && (
         <div className="bg-[var(--color-success)]/10 border-b border-[var(--color-success)]/30 px-4 py-2.5 text-center text-sm text-[var(--color-success)] font-medium">
           Your plan has been upgraded successfully. Welcome to the next level!
+        </div>
+      )}
+
+      {/* Credits added banner */}
+      {creditsAdded && (
+        <div className="bg-[var(--color-success)]/10 border-b border-[var(--color-success)]/30 px-4 py-2.5 text-center text-sm text-[var(--color-success)] font-medium">
+          Credits added to your account. Keep closing!
         </div>
       )}
 
@@ -366,6 +396,17 @@ export default function DashboardPage() {
               )}
             </button>
 
+            {/* Buy more credits CTA */}
+            {user && user.creditsLeft <= 3 && (
+              <button
+                onClick={() => setShowCreditsModal(true)}
+                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg border border-[var(--color-border)] text-sm font-semibold text-[var(--color-text-muted)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] transition-colors"
+              >
+                <Plus className="w-4 h-4" />
+                {user.creditsLeft === 0 ? 'Buy credits to continue' : `Running low — buy more credits`}
+              </button>
+            )}
+
             {user?.stripeCustomerId && (
               <button
                 onClick={handleBillingPortal}
@@ -466,6 +507,78 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
+
+      {/* ── Buy Credits Modal ── */}
+      {showCreditsModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+          onClick={e => { if (e.target === e.currentTarget) setShowCreditsModal(false) }}
+        >
+          <div className="card w-full max-w-md relative">
+            <button
+              onClick={() => setShowCreditsModal(false)}
+              className="absolute top-4 right-4 text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="mb-6">
+              <h2 className="text-lg font-bold text-[var(--color-text)]">Top up your credits</h2>
+              <p className="text-sm text-[var(--color-text-muted)] mt-1">
+                One-time purchase. Credits never expire. You have{' '}
+                <span className="font-semibold text-[var(--color-text)]">{user?.creditsLeft ?? 0}</span> left.
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              {CREDIT_PACKS.map(pack => (
+                <div
+                  key={pack.id}
+                  className={`relative flex items-center justify-between p-4 rounded-xl border transition-colors ${
+                    pack.badge
+                      ? 'border-[var(--color-primary)] bg-[var(--color-primary)]/5'
+                      : 'border-[var(--color-border)] hover:border-[var(--color-primary)]/50'
+                  }`}
+                >
+                  {pack.badge && (
+                    <span className="absolute -top-2.5 left-3 px-2 py-0.5 rounded-full bg-[var(--color-primary)] text-white text-[10px] font-bold uppercase tracking-wide">
+                      {pack.badge}
+                    </span>
+                  )}
+
+                  <div>
+                    <p className="font-semibold text-[var(--color-text)] text-sm">{pack.name}</p>
+                    <p className="text-xs text-[var(--color-text-muted)] mt-0.5">
+                      {pack.credits} credits · ${pack.perCredit}/credit
+                    </p>
+                    <p className="text-xs text-[var(--color-primary)] mt-0.5">{pack.anchor}</p>
+                  </div>
+
+                  <button
+                    onClick={() => handleBuyCredits(pack.priceId, pack.id)}
+                    disabled={buyingPack === pack.id}
+                    className={`ml-4 px-4 py-2 rounded-lg text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                      pack.badge
+                        ? 'bg-[var(--color-primary)] text-white hover:bg-[var(--color-primary-dark)]'
+                        : 'border border-[var(--color-border)] text-[var(--color-text)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]'
+                    }`}
+                  >
+                    {buyingPack === pack.id ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      `$${pack.price}`
+                    )}
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            <p className="text-xs text-[var(--color-text-muted)] text-center mt-4">
+              Secure checkout via Stripe. Instant delivery.
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -25,6 +25,21 @@ export async function POST(req: NextRequest) {
     switch (event.type) {
       case 'checkout.session.completed': {
         const session = event.data.object as Stripe.Checkout.Session
+
+        // ── Credit pack (one-time payment) ──
+        if (session.mode === 'payment' && session.metadata?.type === 'credit_pack') {
+          const userId = session.metadata.userId
+          const creditsToAdd = parseInt(session.metadata.credits ?? '0', 10)
+          if (userId && creditsToAdd > 0) {
+            await prisma.user.update({
+              where: { id: userId },
+              data: { creditsLeft: { increment: creditsToAdd } },
+            })
+          }
+          break
+        }
+
+        // ── New subscription ──
         if (session.mode !== 'subscription') break
 
         const customerId = session.customer as string

@@ -56,3 +56,46 @@ export function getCreditsForPlan(plan: string): number {
   if (plan in PLANS) return PLANS[plan as PlanName].credits
   return 5 // free plan
 }
+
+// ─── CREDIT TOP-UP PACKS ────────────────────────────────────────────────────
+// One-time purchases — credits are added on top of existing balance.
+// Create these as one-time prices in Stripe Dashboard.
+
+export const CREDIT_PACKS = [
+  {
+    id: 'boost',
+    name: 'Boost',
+    credits: 20,
+    price: 7,
+    priceId: process.env.STRIPE_CREDITS_BOOST_PRICE_ID ?? '',
+    badge: null,
+    anchor: 'Less than a coffee',
+    perCredit: '0.35',
+  },
+  {
+    id: 'growth',
+    name: 'Growth',
+    credits: 60,
+    price: 17,
+    priceId: process.env.STRIPE_CREDITS_GROWTH_PRICE_ID ?? '',
+    badge: 'Best Value',
+    anchor: 'Save 20% vs Boost',
+    perCredit: '0.28',
+  },
+  {
+    id: 'power',
+    name: 'Power',
+    credits: 120,
+    price: 29,
+    priceId: process.env.STRIPE_CREDITS_POWER_PRICE_ID ?? '',
+    badge: null,
+    anchor: 'Save 31% vs Boost',
+    perCredit: '0.24',
+  },
+] as const
+
+export type CreditPackId = typeof CREDIT_PACKS[number]['id']
+
+export function getCreditPackByPriceId(priceId: string) {
+  return CREDIT_PACKS.find(p => p.priceId === priceId) ?? null
+}
