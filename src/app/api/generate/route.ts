@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { generateObjectionResponse } from '@/lib/ai-engine'
+import { generateLimiter, applyRateLimit } from '@/lib/ratelimit'
 
 export async function POST(req: NextRequest) {
   try {
@@ -11,6 +12,9 @@ export async function POST(req: NextRequest) {
     }
 
     const userId = session.user.id
+
+    const limited = await applyRateLimit(generateLimiter, `generate:${userId}`)
+    if (limited) return limited
 
     const user = await prisma.user.findUnique({
       where: { id: userId },
@@ -33,6 +37,14 @@ export async function POST(req: NextRequest) {
 
     if (!objectionType || !tone) {
       return NextResponse.json({ error: 'objectionType and tone are required' }, { status: 400 })
+    }
+
+    if (clientMessage && clientMessage.length > 2000) {
+      return NextResponse.json({ error: 'Client message is too long (max 2000 characters)' }, { status: 400 })
+    }
+
+    if (contractValue && contractValue.length > 100) {
+      return NextResponse.json({ error: 'Contract value is too long' }, { status: 400 })
     }
 
     const reply = await generateObjectionResponse({

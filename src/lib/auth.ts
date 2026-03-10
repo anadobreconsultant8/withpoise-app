@@ -3,6 +3,7 @@ import Credentials from 'next-auth/providers/credentials'
 import { PrismaAdapter } from '@auth/prisma-adapter'
 import { prisma } from './prisma'
 import bcrypt from 'bcryptjs'
+import { loginLimiter } from './ratelimit'
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
@@ -19,6 +20,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         const email = credentials.email as string
         const password = credentials.password as string
+
+        // Rate limit login attempts per email
+        if (loginLimiter) {
+          const { success } = await loginLimiter.limit(`login:${email}`)
+          if (!success) return null
+        }
 
         const user = await prisma.user.findUnique({ where: { email } })
         if (!user) return null
