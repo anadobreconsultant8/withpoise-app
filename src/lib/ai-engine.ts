@@ -65,7 +65,7 @@ ${contextLines.join('\n')}
 Follow the POISE framework strictly. Do not suggest any discount, price reduction, or free work. Write in plain prose, ready to send.`.trim()
 
   const message = await client.messages.create({
-    model: 'claude-sonnet-4-5',
+    model: 'claude-sonnet-4-6',
     max_tokens: 1024,
     system: SYSTEM_PROMPT,
     messages: [{ role: 'user', content: userPrompt }],

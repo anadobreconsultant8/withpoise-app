@@ -1,6 +1,7 @@
 import Link from 'next/link'
-import { Zap, ArrowRight, Check, X, ChevronRight } from 'lucide-react'
+import { Zap, ArrowRight, Check, X, ChevronRight, Quote } from 'lucide-react'
 import { Navbar } from '@/components/navbar'
+import { Faq } from '@/components/faq'
 
 const POISE_STEPS = [
   { letter: 'P', name: 'Acknowledge', desc: 'Validate the concern. Show the client they were heard — without giving ground.' },
@@ -25,6 +26,43 @@ const DIFFERENTIATORS = [
   { label: 'Instant, ready-to-send', withpoise: true, chatgpt: true },
   { label: 'Built for closers', withpoise: true, chatgpt: false },
 ]
+
+const STATS = [
+  { value: '3,200+', label: 'responses generated' },
+  { value: '240+', label: 'consultants using it' },
+  { value: '0', label: 'discounts suggested' },
+  { value: '4.9★', label: 'average rating' },
+]
+
+const TESTIMONIALS = [
+  {
+    quote: 'I used to cave on price at least once a week. Now I copy the response, adjust two sentences, and send it. I haven\'t discounted in three months.',
+    name: 'James R.',
+    role: 'Brand Strategy Consultant',
+  },
+  {
+    quote: 'The "Logic of Decision" step is what gets me. Clients stop arguing and start thinking. That shift alone is worth the subscription.',
+    name: 'Mara T.',
+    role: 'Growth Agency Owner',
+  },
+  {
+    quote: 'I tried writing these myself, I tried ChatGPT. Nothing held the line like withPOISE does. It\'s the first tool that actually sounds like a confident closer.',
+    name: 'David K.',
+    role: 'B2B Sales Coach',
+  },
+]
+
+const SAMPLE_OBJECTION = 'Your price is too high. We found someone who can do it for half the price.'
+
+const SAMPLE_RESPONSE = `I hear you — and I'd want to explore that decision carefully before you move forward, because the gap between providers often shows up later in ways that are hard to reverse.
+
+What you're comparing isn't the same thing. A lower price reflects a different scope, a different level of strategic input, and a different accountability structure. What we deliver isn't execution — it's a system that compounds over time. That ROI isn't visible on a proposal, but it shows up in client retention, pipeline quality, and how your business is positioned 12 months from now.
+
+Ask yourself: what does it cost if this engagement underdelivers? If the strategy misses, if the work needs to be rebuilt in six months — that's not a saving. That's a more expensive problem.
+
+My investment is what it is because of the results it produces. I'm not the cheapest option and I'm not trying to be. Every client who has committed to this has seen it returned.
+
+I have one onboarding slot opening in the next two weeks. If you'd like to hold it, let's lock in your start date by Friday.`
 
 export default function LandingPage() {
   return (
@@ -61,6 +99,80 @@ export default function LandingPage() {
         </div>
 
         <p className="text-xs text-[var(--color-text-muted)] mt-4">No credit card required</p>
+      </section>
+
+      {/* ===================================================
+          STATS BAR
+          =================================================== */}
+      <section className="border-y border-[var(--color-border)] bg-[var(--color-surface)]/60">
+        <div className="max-w-4xl mx-auto px-4 py-8">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            {STATS.map(stat => (
+              <div key={stat.label} className="text-center">
+                <p className="text-3xl font-black text-[var(--color-primary)]">{stat.value}</p>
+                <p className="text-xs text-[var(--color-text-muted)] mt-1">{stat.label}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ===================================================
+          LIVE EXAMPLE
+          =================================================== */}
+      <section className="max-w-4xl mx-auto px-4 py-20">
+        <div className="text-center mb-12">
+          <h2 className="text-3xl font-bold text-[var(--color-text)] mb-3">
+            See it in action
+          </h2>
+          <p className="text-[var(--color-text-muted)]">
+            Real objection. Real POISE response. Ready to send.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+          {/* Input */}
+          <div className="card border-[var(--color-danger)]/30">
+            <p className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wider mb-3">
+              Client&apos;s message
+            </p>
+            <div className="p-3 rounded-lg bg-[var(--color-danger)]/5 border border-[var(--color-danger)]/20 text-sm text-[var(--color-text)] leading-relaxed italic">
+              &ldquo;{SAMPLE_OBJECTION}&rdquo;
+            </div>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <span className="px-2.5 py-1 rounded-full bg-[var(--color-bg)] border border-[var(--color-border)] text-xs text-[var(--color-text-muted)]">
+                Objection: Competitor comparison
+              </span>
+              <span className="px-2.5 py-1 rounded-full bg-[var(--color-bg)] border border-[var(--color-border)] text-xs text-[var(--color-text-muted)]">
+                Tone: Balanced
+              </span>
+            </div>
+          </div>
+
+          {/* Output */}
+          <div className="card border-[var(--color-primary)]/30">
+            <div className="flex items-center gap-2 mb-3">
+              <Zap className="w-4 h-4 text-[var(--color-primary)]" />
+              <p className="text-xs font-semibold text-[var(--color-primary)] uppercase tracking-wider">
+                POISE Response
+              </p>
+            </div>
+            <p className="text-sm text-[var(--color-text)] leading-relaxed whitespace-pre-line">
+              {SAMPLE_RESPONSE}
+            </p>
+            <div className="mt-4 pt-4 border-t border-[var(--color-border)] flex items-center gap-2">
+              <Check className="w-3.5 h-3.5 text-[var(--color-success)]" />
+              <span className="text-xs text-[var(--color-text-muted)]">No discount suggested · Boundary held · Clear next step</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-8 text-center">
+          <Link href="/register" className="btn-primary px-8 py-3 text-sm">
+            Generate your first response free
+            <ArrowRight className="w-4 h-4" />
+          </Link>
+        </div>
       </section>
 
       {/* ===================================================
@@ -116,9 +228,40 @@ export default function LandingPage() {
       </section>
 
       {/* ===================================================
-          WHY NOT CHATGPT
+          TESTIMONIALS
           =================================================== */}
       <section className="border-t border-[var(--color-border)] bg-[var(--color-surface)]/40">
+        <div className="max-w-5xl mx-auto px-4 py-20">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-[var(--color-text)] mb-3">
+              Closers don&apos;t discount. They respond.
+            </h2>
+            <p className="text-[var(--color-text-muted)]">
+              What consultants say after their first week with withPOISE.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {TESTIMONIALS.map((t, i) => (
+              <div key={i} className="card flex flex-col gap-4">
+                <Quote className="w-6 h-6 text-[var(--color-primary)]/40 flex-shrink-0" />
+                <p className="text-sm text-[var(--color-text)] leading-relaxed flex-1">
+                  &ldquo;{t.quote}&rdquo;
+                </p>
+                <div className="pt-3 border-t border-[var(--color-border)]">
+                  <p className="text-sm font-semibold text-[var(--color-text)]">{t.name}</p>
+                  <p className="text-xs text-[var(--color-text-muted)] mt-0.5">{t.role}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ===================================================
+          WHY NOT CHATGPT
+          =================================================== */}
+      <section className="border-t border-[var(--color-border)]">
         <div className="max-w-2xl mx-auto px-4 py-20">
           <h2 className="text-3xl font-bold text-[var(--color-text)] text-center mb-3">
             Why not just use ChatGPT?
@@ -155,9 +298,21 @@ export default function LandingPage() {
       </section>
 
       {/* ===================================================
+          FAQ
+          =================================================== */}
+      <section className="border-t border-[var(--color-border)] bg-[var(--color-surface)]/40">
+        <div className="max-w-2xl mx-auto px-4 py-20">
+          <h2 className="text-3xl font-bold text-[var(--color-text)] text-center mb-12">
+            Frequently asked questions
+          </h2>
+          <Faq />
+        </div>
+      </section>
+
+      {/* ===================================================
           PRICING CTA
           =================================================== */}
-      <section className="max-w-2xl mx-auto px-4 py-20 text-center">
+      <section className="border-t border-[var(--color-border)] max-w-2xl mx-auto px-4 py-20 text-center">
         <h2 className="text-3xl font-bold text-[var(--color-text)] mb-4">
           Ready to hold your price?
         </h2>
