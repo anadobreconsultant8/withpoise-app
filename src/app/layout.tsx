@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import './globals.css'
 import { SessionProvider } from '@/components/session-provider'
+import { Analytics } from '@vercel/analytics/next'
 
 const BASE_URL = process.env.NEXTAUTH_URL || 'https://withpoise.net'
 
@@ -53,6 +54,7 @@ export default function RootLayout({
     <html lang="en">
       <body>
         <SessionProvider>{children}</SessionProvider>
+        <Analytics />
       </body>
     </html>
   )

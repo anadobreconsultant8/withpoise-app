@@ -2,7 +2,58 @@ import { Resend } from 'resend'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
-const FROM = 'withPOISE <noreply@withpoise.com>'
+const FROM = 'withPOISE <hello@withpoise.net>'
+const BASE_URL = process.env.NEXTAUTH_URL || 'https://withpoise.net'
+
+export async function sendWelcomeEmail(email: string, name?: string | null) {
+  const firstName = name?.split(' ')[0] || 'there'
+  const dashboardUrl = `${BASE_URL}/dashboard`
+
+  await resend.emails.send({
+    from: FROM,
+    to: email,
+    subject: 'Your 5 free responses are ready — withPOISE',
+    html: `
+      <div style="font-family: -apple-system, sans-serif; max-width: 480px; margin: 0 auto; padding: 40px 24px; background: #0f0d1a; color: #e2e0f0;">
+        <div style="margin-bottom: 32px;">
+          <span style="font-size: 20px; font-weight: 700; color: #e2e0f0;">with<span style="color: #6366f1;">POISE</span></span>
+        </div>
+
+        <h1 style="font-size: 22px; font-weight: 700; margin-bottom: 12px; color: #e2e0f0;">
+          Welcome, ${firstName}. Let's close some deals.
+        </h1>
+
+        <p style="color: #9895ad; line-height: 1.6; margin-bottom: 24px;">
+          Your account is ready. You have <strong style="color: #e2e0f0;">5 free responses</strong> waiting — no credit card needed.
+        </p>
+
+        <p style="color: #9895ad; line-height: 1.6; margin-bottom: 8px;">Here's what you can do right now:</p>
+        <ul style="color: #9895ad; line-height: 1.8; margin: 0 0 28px 0; padding-left: 20px;">
+          <li>Pick any of 19 objection types across 5 categories</li>
+          <li>Paste your client's exact message for a personalized response</li>
+          <li>Choose your tone — Diplomatic, Balanced, Assertive, or Very Firm</li>
+          <li>Get a ready-to-send POISE response in seconds</li>
+        </ul>
+
+        <a href="${dashboardUrl}" style="display: inline-block; padding: 12px 28px; background: #6366f1; color: white; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 15px;">
+          Generate your first response →
+        </a>
+
+        <p style="color: #9895ad; font-size: 13px; margin-top: 32px; line-height: 1.6;">
+          One rule we never break: <strong style="color: #e2e0f0;">no discounts, ever.</strong><br/>
+          Every response holds your price and moves the deal forward.
+        </p>
+
+        <hr style="border: none; border-top: 1px solid #3d3857; margin: 28px 0;" />
+
+        <p style="color: #9895ad; font-size: 12px;">
+          Questions? Reply to this email or write to <a href="mailto:hello@withpoise.net" style="color: #6366f1;">hello@withpoise.net</a><br/>
+          withPOISE · <a href="${BASE_URL}" style="color: #6366f1;">withpoise.net</a>
+        </p>
+      </div>
+    `,
+  })
+}
 
 export async function sendPasswordResetEmail(email: string, resetUrl: string) {
   await resend.emails.send({
@@ -26,7 +77,7 @@ export async function sendPasswordResetEmail(email: string, resetUrl: string) {
         </p>
         <hr style="border: none; border-top: 1px solid #3d3857; margin: 28px 0;" />
         <p style="color: #9895ad; font-size: 12px;">
-          withPOISE · <a href="${process.env.NEXTAUTH_URL}" style="color: #6366f1;">withpoise.com</a>
+          withPOISE · <a href="${BASE_URL}" style="color: #6366f1;">withpoise.net</a>
         </p>
       </div>
     `,
