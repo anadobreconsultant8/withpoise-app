@@ -169,7 +169,7 @@ export default function LandingPage() {
 
         <div className="mt-8 text-center">
           <Link href="/register" className="btn-primary px-8 py-3 text-sm">
-            Generate your first response free
+            Try it free — no credit card needed
             <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
