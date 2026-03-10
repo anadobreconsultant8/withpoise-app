@@ -1,11 +1,17 @@
 import { Resend } from 'resend'
 
-const resend = new Resend(process.env.RESEND_API_KEY)
-
 const FROM = 'withPOISE <hello@withpoise.net>'
 const BASE_URL = process.env.NEXTAUTH_URL || 'https://withpoise.net'
 
+function getResend() {
+  if (!process.env.RESEND_API_KEY) return null
+  return new Resend(process.env.RESEND_API_KEY)
+}
+
 export async function sendWelcomeEmail(email: string, name?: string | null) {
+  const resend = getResend()
+  if (!resend) return
+
   const firstName = name?.split(' ')[0] || 'there'
   const dashboardUrl = `${BASE_URL}/dashboard`
 
@@ -56,6 +62,9 @@ export async function sendWelcomeEmail(email: string, name?: string | null) {
 }
 
 export async function sendPasswordResetEmail(email: string, resetUrl: string) {
+  const resend = getResend()
+  if (!resend) return
+
   await resend.emails.send({
     from: FROM,
     to: email,
