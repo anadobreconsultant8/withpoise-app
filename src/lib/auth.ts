@@ -5,7 +5,6 @@ import { PrismaAdapter } from '@auth/prisma-adapter'
 import { prisma } from './prisma'
 import bcrypt from 'bcryptjs'
 import { loginLimiter } from './ratelimit'
-import { sendWelcomeEmail } from './email'
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
@@ -45,8 +44,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   ],
   events: {
     async createUser({ user }) {
-      // New OAuth user — send welcome email and ensure credits are set
       if (user.email) {
+        const { sendWelcomeEmail } = await import('./email')
         await sendWelcomeEmail(user.email, user.name ?? undefined)
       }
     },
