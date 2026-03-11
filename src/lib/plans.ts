@@ -1,12 +1,12 @@
 // Plan definitions — safe to import on both client and server
-// (no Stripe client initialization here)
+// Price IDs use NEXT_PUBLIC_ so they're accessible in browser too
 
 export const PLANS = {
   starter: {
     name: 'Starter',
     credits: 30,
     price: 29,
-    priceId: process.env.STRIPE_STARTER_PRICE_ID ?? '',
+    priceId: process.env.NEXT_PUBLIC_STRIPE_STARTER_PRICE_ID ?? '',
     features: [
       '30 responses per month',
       'All 5 objection categories',
@@ -19,7 +19,7 @@ export const PLANS = {
     name: 'Pro',
     credits: 100,
     price: 79,
-    priceId: process.env.STRIPE_PRO_PRICE_ID ?? '',
+    priceId: process.env.NEXT_PUBLIC_STRIPE_PRO_PRICE_ID ?? '',
     features: [
       '100 responses per month',
       'All Starter features',
@@ -32,7 +32,7 @@ export const PLANS = {
     name: 'Elite',
     credits: 300,
     price: 149,
-    priceId: process.env.STRIPE_ELITE_PRICE_ID ?? '',
+    priceId: process.env.NEXT_PUBLIC_STRIPE_ELITE_PRICE_ID ?? '',
     features: [
       '300 responses per month',
       'All Pro features',
@@ -58,8 +58,6 @@ export function getCreditsForPlan(plan: string): number {
 }
 
 // ─── CREDIT TOP-UP PACKS ────────────────────────────────────────────────────
-// One-time purchases — credits are added on top of existing balance.
-// Create these as one-time prices in Stripe Dashboard.
 
 export const CREDIT_PACKS = [
   {
@@ -67,7 +65,7 @@ export const CREDIT_PACKS = [
     name: 'Boost',
     credits: 20,
     price: 7,
-    priceId: process.env.STRIPE_CREDITS_BOOST_PRICE_ID ?? '',
+    priceId: process.env.NEXT_PUBLIC_STRIPE_CREDITS_BOOST_PRICE_ID ?? '',
     badge: null,
     anchor: 'Less than a coffee',
     perCredit: '0.35',
@@ -77,7 +75,7 @@ export const CREDIT_PACKS = [
     name: 'Growth',
     credits: 60,
     price: 17,
-    priceId: process.env.STRIPE_CREDITS_GROWTH_PRICE_ID ?? '',
+    priceId: process.env.NEXT_PUBLIC_STRIPE_CREDITS_GROWTH_PRICE_ID ?? '',
     badge: 'Best Value',
     anchor: 'Save 20% vs Boost',
     perCredit: '0.28',
@@ -87,7 +85,7 @@ export const CREDIT_PACKS = [
     name: 'Power',
     credits: 120,
     price: 29,
-    priceId: process.env.STRIPE_CREDITS_POWER_PRICE_ID ?? '',
+    priceId: process.env.NEXT_PUBLIC_STRIPE_CREDITS_POWER_PRICE_ID ?? '',
     badge: null,
     anchor: 'Save 31% vs Boost',
     perCredit: '0.24',
