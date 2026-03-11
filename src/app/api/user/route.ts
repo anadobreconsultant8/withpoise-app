@@ -31,7 +31,9 @@ export async function GET() {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
-    return NextResponse.json(user)
+    // Never expose passwordHash to client — return boolean instead
+    const { passwordHash, ...safeUser } = user
+    return NextResponse.json({ ...safeUser, hasPassword: !!passwordHash })
   } catch (error) {
     console.error('[user]', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

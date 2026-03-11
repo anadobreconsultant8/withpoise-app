@@ -26,6 +26,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid signature' }, { status: 400 })
   }
 
+  // Idempotency — skip already-processed events
+  try {
+    await prisma.processedStripeEvent.create({ data: { id: event.id } })
+  } catch {
+    // Unique constraint violation = already processed
+    return NextResponse.json({ received: true })
+  }
+
   try {
     switch (event.type) {
       case 'checkout.session.completed': {

@@ -51,6 +51,11 @@ model Session {
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
+model ProcessedStripeEvent {
+  id          String   @id // Stripe event ID
+  processedAt DateTime @default(now())
+}
+
 model PasswordResetToken {
   id        String   @id @default(cuid())
   email     String

@@ -1,13 +1,17 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { generateLimiter, applyRateLimit } from '@/lib/ratelimit'
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
     const session = await auth()
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+
+    const limited = await applyRateLimit(generateLimiter, `history:${session.user.id}`)
+    if (limited) return limited
 
     const generations = await prisma.generation.findMany({
       where: { userId: session.user.id },
