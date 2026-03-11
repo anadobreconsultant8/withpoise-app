@@ -12,10 +12,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Missing stripe-signature header' }, { status: 400 })
   }
 
+  if (!process.env.STRIPE_WEBHOOK_SECRET) {
+    console.error('[webhook] STRIPE_WEBHOOK_SECRET not configured')
+    return NextResponse.json({ error: 'Webhook not configured' }, { status: 500 })
+  }
+
   let event: Stripe.Event
 
   try {
-    event = stripe.webhooks.constructEvent(body, signature, process.env.STRIPE_WEBHOOK_SECRET!)
+    event = stripe.webhooks.constructEvent(body, signature, process.env.STRIPE_WEBHOOK_SECRET)
   } catch (err) {
     console.error('[webhook] Signature verification failed:', err)
     return NextResponse.json({ error: 'Invalid signature' }, { status: 400 })
@@ -30,7 +35,8 @@ export async function POST(req: NextRequest) {
         if (session.mode === 'payment' && session.metadata?.type === 'credit_pack') {
           const userId = session.metadata.userId
           const creditsToAdd = parseInt(session.metadata.credits ?? '0', 10)
-          if (userId && creditsToAdd > 0) {
+          const VALID_CREDIT_AMOUNTS = [20, 60, 120]
+          if (userId && VALID_CREDIT_AMOUNTS.includes(creditsToAdd)) {
             await prisma.user.update({
               where: { id: userId },
               data: { creditsLeft: { increment: creditsToAdd } },

@@ -3,6 +3,12 @@ import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { generateObjectionResponse } from '@/lib/ai-engine'
 import { generateLimiter, applyRateLimit } from '@/lib/ratelimit'
+import { OBJECTION_CATEGORIES, TONES, RELATIONSHIP_LEVELS, OBJECTIVES } from '@/lib/objection-types'
+
+const VALID_OBJECTION_IDS = OBJECTION_CATEGORIES.flatMap(c => c.objections.map(o => o.id))
+const VALID_TONE_IDS = TONES.map(t => t.id)
+const VALID_RELATIONSHIP_IDS = RELATIONSHIP_LEVELS.map(r => r.id)
+const VALID_OBJECTIVE_IDS = OBJECTIVES.map(o => o.id)
 
 export async function POST(req: NextRequest) {
   try {
@@ -37,6 +43,22 @@ export async function POST(req: NextRequest) {
 
     if (!objectionType || !tone) {
       return NextResponse.json({ error: 'objectionType and tone are required' }, { status: 400 })
+    }
+
+    if (!VALID_OBJECTION_IDS.includes(objectionType)) {
+      return NextResponse.json({ error: 'Invalid objection type' }, { status: 400 })
+    }
+
+    if (!VALID_TONE_IDS.includes(tone)) {
+      return NextResponse.json({ error: 'Invalid tone' }, { status: 400 })
+    }
+
+    if (relationshipLevel && !VALID_RELATIONSHIP_IDS.includes(relationshipLevel)) {
+      return NextResponse.json({ error: 'Invalid relationship level' }, { status: 400 })
+    }
+
+    if (objective && !VALID_OBJECTIVE_IDS.includes(objective)) {
+      return NextResponse.json({ error: 'Invalid objective' }, { status: 400 })
     }
 
     if (clientMessage && clientMessage.length > 2000) {

@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { sendPasswordResetEmail } from '@/lib/email'
-import { registerLimiter, applyRateLimit } from '@/lib/ratelimit'
+import { forgotPasswordLimiter, applyRateLimit } from '@/lib/ratelimit'
 import crypto from 'crypto'
 
 export async function POST(req: NextRequest) {
   try {
     const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown'
-    const limited = await applyRateLimit(registerLimiter, `forgot-password:${ip}`)
+    const limited = await applyRateLimit(forgotPasswordLimiter, `forgot-password:${ip}`)
     if (limited) return limited
 
     const { email } = await req.json()

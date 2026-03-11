@@ -1,13 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
+import { resetPasswordLimiter, applyRateLimit } from '@/lib/ratelimit'
 
 export async function POST(req: NextRequest) {
   try {
+    const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown'
+    const limited = await applyRateLimit(resetPasswordLimiter, `reset-password:${ip}`)
+    if (limited) return limited
+
     const { token, password } = await req.json()
 
     if (!token || !password) {
       return NextResponse.json({ error: 'Token and password are required' }, { status: 400 })
+    }
+
+    if (typeof token !== 'string' || !/^[a-f0-9]{64}$/.test(token)) {
+      return NextResponse.json({ error: 'Invalid reset token' }, { status: 400 })
     }
 
     if (password.length < 8) {
