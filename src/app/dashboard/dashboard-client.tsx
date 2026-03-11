@@ -77,8 +77,22 @@ export function DashboardClient() {
   const upgraded = searchParams.get('upgraded')
   const creditsAdded = searchParams.get('credits_added')
   useEffect(() => {
-    if (upgraded || creditsAdded) fetchUser()
-  }, [upgraded, creditsAdded, fetchUser])
+    if (!upgraded && !creditsAdded) return
+    // Webhook may be slightly delayed — poll until credits update
+    let attempts = 0
+    const poll = setInterval(async () => {
+      attempts++
+      const res = await fetch('/api/user')
+      if (!res.ok) return
+      const data = await res.json()
+      setUser(data)
+      // Stop polling when credits updated or after 10 attempts (~10s)
+      if (data.creditsTotal > 5 || data.creditsLeft > 5 || attempts >= 10) {
+        clearInterval(poll)
+      }
+    }, 1000)
+    return () => clearInterval(poll)
+  }, [upgraded, creditsAdded])
 
   async function handleGenerate() {
     if (!selectedObjection) {
