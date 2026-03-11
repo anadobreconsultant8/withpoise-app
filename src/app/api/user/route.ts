@@ -23,6 +23,7 @@ export async function GET() {
         stripePriceId: true,
         stripeCurrentPeriodEnd: true,
         createdAt: true,
+        passwordHash: true,
       },
     })
 
