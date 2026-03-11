@@ -15,7 +15,7 @@ export default function PricingPage() {
 
   async function handleCheckout(priceId: string, planKey: string) {
     if (!session) {
-      router.push('/register')
+      router.push(`/register?plan=${planKey}`)
       return
     }
 

@@ -188,6 +188,20 @@ export function DashboardClient() {
         </div>
       )}
 
+      {/* Trial nudge — free plan users with credits remaining */}
+      {user && user.plan === 'free' && !noCredits && (
+        <div className="bg-[var(--color-primary)]/8 border-b border-[var(--color-primary)]/20 px-4 py-2.5 text-center text-sm">
+          <span className="text-[var(--color-text-muted)]">
+            You&apos;re on the free trial —{' '}
+            <span className="text-[var(--color-text)] font-medium">{user.creditsLeft} credit{user.creditsLeft !== 1 ? 's' : ''} left.</span>
+            {' '}
+          </span>
+          <a href="/pricing" className="text-[var(--color-primary)] font-semibold hover:underline">
+            Upgrade to get 30–300 responses/month →
+          </a>
+        </div>
+      )}
+
       {/* Upgrade success banner */}
       {upgraded && (
         <div className="bg-[var(--color-success)]/10 border-b border-[var(--color-success)]/30 px-4 py-2.5 text-center text-sm text-[var(--color-success)] font-medium">
