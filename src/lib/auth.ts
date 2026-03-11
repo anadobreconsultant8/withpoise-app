@@ -1,14 +1,20 @@
 import NextAuth from 'next-auth'
 import Credentials from 'next-auth/providers/credentials'
+import Google from 'next-auth/providers/google'
 import { PrismaAdapter } from '@auth/prisma-adapter'
 import { prisma } from './prisma'
 import bcrypt from 'bcryptjs'
 import { loginLimiter } from './ratelimit'
+import { sendWelcomeEmail } from './email'
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
   session: { strategy: 'jwt' },
   providers: [
+    Google({
+      clientId: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    }),
     Credentials({
       name: 'credentials',
       credentials: {
@@ -28,7 +34,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         }
 
         const user = await prisma.user.findUnique({ where: { email } })
-        if (!user) return null
+        if (!user || !user.passwordHash) return null
 
         const valid = await bcrypt.compare(password, user.passwordHash)
         if (!valid) return null
@@ -37,6 +43,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       },
     }),
   ],
+  events: {
+    async createUser({ user }) {
+      // New OAuth user — send welcome email and ensure credits are set
+      if (user.email) {
+        await sendWelcomeEmail(user.email, user.name ?? undefined)
+      }
+    },
+  },
   callbacks: {
     jwt({ token, user }) {
       if (user?.id) token.id = user.id
