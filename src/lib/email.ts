@@ -17,8 +17,7 @@ function emailFooter(type: 'transactional' | 'commercial') {
     <hr style="border: none; border-top: 1px solid #3d3857; margin: 28px 0;" />
     <p style="color: #9895ad; font-size: 11px; line-height: 1.7;">
       ${unsubscribeLine}<a href="${BASE_URL}/privacy" style="color: #6366f1;">Privacy Policy</a> · <a href="${BASE_URL}" style="color: #6366f1;">withpoise.net</a><br/>
-      withPOISE · hello@withpoise.net<br/>
-      Romania · <a href="mailto:hello@withpoise.net" style="color: #6366f1;">hello@withpoise.net</a>
+      withPOISE · Blvd Rm Sărat 33, Bucharest, Romania
     </p>
     <p style="color: #6b6885; font-size: 11px; margin-top: 8px;">
       You're receiving this email because you created an account on withPOISE.
