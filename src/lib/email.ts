@@ -8,6 +8,25 @@ function getResend() {
   return new Resend(process.env.RESEND_API_KEY)
 }
 
+function emailFooter(type: 'transactional' | 'commercial') {
+  const unsubscribeLine = type === 'commercial'
+    ? `<a href="${BASE_URL}/account" style="color: #6366f1;">Manage email preferences</a> · `
+    : ''
+
+  return `
+    <hr style="border: none; border-top: 1px solid #3d3857; margin: 28px 0;" />
+    <p style="color: #9895ad; font-size: 11px; line-height: 1.7;">
+      ${unsubscribeLine}<a href="${BASE_URL}/privacy" style="color: #6366f1;">Privacy Policy</a> · <a href="${BASE_URL}" style="color: #6366f1;">withpoise.net</a><br/>
+      withPOISE · hello@withpoise.net<br/>
+      Romania · <a href="mailto:hello@withpoise.net" style="color: #6366f1;">hello@withpoise.net</a>
+    </p>
+    <p style="color: #6b6885; font-size: 11px; margin-top: 8px;">
+      You're receiving this email because you created an account on withPOISE.
+      To stop receiving emails, <a href="${BASE_URL}/account" style="color: #9895ad;">delete your account</a>.
+    </p>
+  `
+}
+
 export async function sendWelcomeEmail(email: string, name?: string | null) {
   const resend = getResend()
   if (!resend) return
@@ -50,12 +69,7 @@ export async function sendWelcomeEmail(email: string, name?: string | null) {
           Every response holds your price and moves the deal forward.
         </p>
 
-        <hr style="border: none; border-top: 1px solid #3d3857; margin: 28px 0;" />
-
-        <p style="color: #9895ad; font-size: 12px;">
-          Questions? Reply to this email or write to <a href="mailto:hello@withpoise.net" style="color: #6366f1;">hello@withpoise.net</a><br/>
-          withPOISE · <a href="${BASE_URL}" style="color: #6366f1;">withpoise.net</a>
-        </p>
+        ${emailFooter('commercial')}
       </div>
     `,
   })
@@ -84,10 +98,7 @@ export async function sendPasswordResetEmail(email: string, resetUrl: string) {
         <p style="color: #9895ad; font-size: 13px; margin-top: 28px; line-height: 1.6;">
           If you didn't request this, you can safely ignore this email. Your password will not change.
         </p>
-        <hr style="border: none; border-top: 1px solid #3d3857; margin: 28px 0;" />
-        <p style="color: #9895ad; font-size: 12px;">
-          withPOISE · <a href="${BASE_URL}" style="color: #6366f1;">withpoise.net</a>
-        </p>
+        ${emailFooter('transactional')}
       </div>
     `,
   })
