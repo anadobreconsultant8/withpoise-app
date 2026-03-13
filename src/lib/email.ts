@@ -17,7 +17,7 @@ function emailFooter(type: 'transactional' | 'commercial') {
     <hr style="border: none; border-top: 1px solid #3d3857; margin: 28px 0;" />
     <p style="color: #9895ad; font-size: 11px; line-height: 1.7;">
       ${unsubscribeLine}<a href="${BASE_URL}/privacy" style="color: #6366f1;">Privacy Policy</a> · <a href="${BASE_URL}" style="color: #6366f1;">withpoise.net</a><br/>
-      withPOISE · Blvd Rm Sărat 33, Bucharest, Romania
+      PFA Dobre N Ana-Daniela · Teiu 36, Argeș, Romania
     </p>
     <p style="color: #6b6885; font-size: 11px; margin-top: 8px;">
       You're receiving this email because you created an account on withPOISE.
@@ -67,6 +67,44 @@ export async function sendWelcomeEmail(email: string, name?: string | null) {
           One rule we never break: <strong style="color: #e2e0f0;">no discounts, ever.</strong><br/>
           Every response holds your price and moves the deal forward.
         </p>
+
+        ${emailFooter('commercial')}
+      </div>
+    `,
+  })
+}
+
+export async function sendRenewalReminderEmail(email: string, name: string | null, daysLeft: number, planLabel: string, renewalDate: string, portalUrl: string) {
+  const resend = getResend()
+  if (!resend) return
+
+  const firstName = name?.split(' ')[0] || 'there'
+
+  await resend.emails.send({
+    from: FROM,
+    to: email,
+    subject: `Your ${planLabel} plan renews in ${daysLeft} day${daysLeft === 1 ? '' : 's'} — withPOISE`,
+    html: `
+      <div style="font-family: -apple-system, sans-serif; max-width: 480px; margin: 0 auto; padding: 40px 24px; background: #0f0d1a; color: #e2e0f0;">
+        <div style="margin-bottom: 32px;">
+          <span style="font-size: 20px; font-weight: 700; color: #e2e0f0;">with<span style="color: #6366f1;">POISE</span></span>
+        </div>
+
+        <h1 style="font-size: 22px; font-weight: 700; margin-bottom: 12px; color: #e2e0f0;">
+          Your subscription renews in ${daysLeft} day${daysLeft === 1 ? '' : 's'}
+        </h1>
+
+        <p style="color: #9895ad; line-height: 1.6; margin-bottom: 24px;">
+          Hi ${firstName}, just a heads-up: your <strong style="color: #e2e0f0;">${planLabel}</strong> plan will automatically renew on <strong style="color: #e2e0f0;">${renewalDate}</strong>.
+        </p>
+
+        <p style="color: #9895ad; line-height: 1.6; margin-bottom: 28px;">
+          No action needed — your access and credits will continue uninterrupted. If you'd like to cancel or make changes before the renewal, you can do so from your billing portal.
+        </p>
+
+        <a href="${portalUrl}" style="display: inline-block; padding: 12px 28px; background: #6366f1; color: white; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 15px;">
+          Manage billing
+        </a>
 
         ${emailFooter('commercial')}
       </div>

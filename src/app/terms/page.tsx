@@ -139,6 +139,9 @@ export default function TermsPage() {
             <p>
               For questions about these Terms, contact us at <a href="mailto:hello@withpoise.net">hello@withpoise.net</a>.
             </p>
+            <p>
+              withPOISE is operated by <strong>PFA Dobre N Ana-Daniela</strong>, Teiu 36, Argeș, Romania.
+            </p>
           </section>
 
         </div>

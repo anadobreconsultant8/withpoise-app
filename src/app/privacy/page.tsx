@@ -20,9 +20,10 @@ export default function PrivacyPage() {
           <section>
             <h2>1. Who We Are</h2>
             <p>
-              withPOISE is operated by Ana Dobre, a sole trader registered in Romania. We are the data controller for personal data collected through this Service.
+              withPOISE is operated by PFA Dobre N Ana-Daniela, a sole trader registered in Romania. We are the data controller for personal data collected through this Service.
             </p>
             <p>
+              Address: Teiu 36, Argeș, Romania<br />
               Contact: <a href="mailto:hello@withpoise.net">hello@withpoise.net</a>
             </p>
           </section>
