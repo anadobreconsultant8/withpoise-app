@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { stripe } from '@/lib/stripe'
 import { prisma } from '@/lib/prisma'
 import { getPlanByPriceId, getCreditsForPlan, PLANS } from '@/lib/plans'
-import { sendPaidWelcomeEmail } from '@/lib/email'
+import { sendPaidWelcomeEmail, sendAdminSubscriptionEventEmail } from '@/lib/email'
 import type Stripe from 'stripe'
 
 export async function POST(req: NextRequest) {
@@ -82,6 +82,7 @@ export async function POST(req: NextRequest) {
 
         if (newUser.email && (planName === 'starter' || planName === 'pro' || planName === 'elite')) {
           sendPaidWelcomeEmail(newUser.email, newUser.name, planName).catch(() => {})
+          sendAdminSubscriptionEventEmail('upgrade', newUser.email, newUser.name, 'free', planName).catch(() => {})
         }
         break
       }
@@ -123,7 +124,7 @@ export async function POST(req: NextRequest) {
         const newCredits = PLANS[planName].credits
         const user = await prisma.user.findUnique({
           where: { stripeCustomerId: customerId },
-          select: { creditsLeft: true, creditsTotal: true },
+          select: { creditsLeft: true, creditsTotal: true, plan: true, email: true, name: true },
         })
 
         if (!user) break
@@ -146,6 +147,14 @@ export async function POST(req: NextRequest) {
             stripeCancelAtPeriodEnd: subscription.cancel_at_period_end,
           },
         })
+
+        if (user.email && user.plan !== planName) {
+          const eventType = creditDiff > 0 ? 'upgrade' : subscription.cancel_at_period_end ? 'cancel' : 'downgrade'
+          sendAdminSubscriptionEventEmail(eventType, user.email, user.name, user.plan, planName).catch(() => {})
+        } else if (user.email && subscription.cancel_at_period_end !== (user.plan === planName)) {
+          const eventType = subscription.cancel_at_period_end ? 'cancel' : 'cancel_resumed'
+          sendAdminSubscriptionEventEmail(eventType, user.email, user.name, user.plan, planName).catch(() => {})
+        }
         break
       }
 
@@ -153,7 +162,7 @@ export async function POST(req: NextRequest) {
         const subscription = event.data.object as Stripe.Subscription
         const customerId = subscription.customer as string
 
-        await prisma.user.update({
+        const expiredUser = await prisma.user.update({
           where: { stripeCustomerId: customerId },
           data: {
             plan: 'free',
@@ -164,7 +173,12 @@ export async function POST(req: NextRequest) {
             stripeCurrentPeriodEnd: null,
             stripeCancelAtPeriodEnd: false,
           },
+          select: { email: true, name: true, plan: true },
         })
+
+        if (expiredUser.email) {
+          sendAdminSubscriptionEventEmail('expired', expiredUser.email, expiredUser.name, expiredUser.plan, 'free').catch(() => {})
+        }
         break
       }
 

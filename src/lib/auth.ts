@@ -45,8 +45,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   events: {
     async createUser({ user }) {
       if (user.email) {
-        const { sendWelcomeEmail } = await import('./email')
+        const { sendWelcomeEmail, sendAdminNewUserEmail } = await import('./email')
         await sendWelcomeEmail(user.email, user.name ?? undefined)
+        sendAdminNewUserEmail(user.email, user.name ?? null, 'google').catch(() => {})
       }
     },
   },

@@ -2,6 +2,7 @@ import { Resend } from 'resend'
 
 const FROM = 'withPOISE <hello@withpoise.net>'
 const BASE_URL = process.env.NEXTAUTH_URL || 'https://withpoise.net'
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'ana@withpoise.com'
 
 function getResend() {
   if (!process.env.RESEND_API_KEY) return null
@@ -483,6 +484,127 @@ export async function sendRenewalReminderEmail(email: string, name: string | nul
         ` : ''}
 
         ${emailFooter('commercial')}
+      </div>
+    `,
+  })
+}
+
+// ─── ADMIN NOTIFICATIONS ─────────────────────────────────────────────────────
+
+export async function sendAdminNewUserEmail(userEmail: string, userName: string | null, method: 'google' | 'email') {
+  const resend = getResend()
+  if (!resend) return
+
+  const now = new Date().toLocaleString('en-GB', { timeZone: 'Europe/Bucharest', dateStyle: 'short', timeStyle: 'short' })
+
+  await resend.emails.send({
+    from: FROM,
+    to: ADMIN_EMAIL,
+    subject: `🆕 New signup: ${userEmail}`,
+    html: `
+      <div style="font-family: monospace; max-width: 480px; margin: 0 auto; padding: 32px 24px; background: #0f0d1a; color: #e2e0f0;">
+        <p style="font-size: 18px; font-weight: 700; margin-bottom: 20px;">New user registered</p>
+        <table style="width: 100%; border-collapse: collapse;">
+          <tr><td style="color: #9895ad; padding: 6px 0; width: 120px;">Email</td><td style="color: #e2e0f0;">${userEmail}</td></tr>
+          <tr><td style="color: #9895ad; padding: 6px 0;">Name</td><td style="color: #e2e0f0;">${userName || '—'}</td></tr>
+          <tr><td style="color: #9895ad; padding: 6px 0;">Method</td><td style="color: #e2e0f0;">${method === 'google' ? '🔵 Google OAuth' : '📧 Email/Password'}</td></tr>
+          <tr><td style="color: #9895ad; padding: 6px 0;">Plan</td><td style="color: #e2e0f0;">Free (5 credits)</td></tr>
+          <tr><td style="color: #9895ad; padding: 6px 0;">Time</td><td style="color: #e2e0f0;">${now} (RO)</td></tr>
+        </table>
+      </div>
+    `,
+  })
+}
+
+export async function sendAdminSubscriptionEventEmail(
+  event: 'upgrade' | 'downgrade' | 'cancel' | 'cancel_resumed' | 'expired',
+  userEmail: string,
+  userName: string | null,
+  fromPlan: string,
+  toPlan: string,
+) {
+  const resend = getResend()
+  if (!resend) return
+
+  const now = new Date().toLocaleString('en-GB', { timeZone: 'Europe/Bucharest', dateStyle: 'short', timeStyle: 'short' })
+
+  const icons: Record<string, string> = {
+    upgrade: '⬆️',
+    downgrade: '⬇️',
+    cancel: '❌',
+    cancel_resumed: '✅',
+    expired: '⏹️',
+  }
+
+  const labels: Record<string, string> = {
+    upgrade: 'Plan upgraded',
+    downgrade: 'Plan downgraded',
+    cancel: 'Subscription cancelled',
+    cancel_resumed: 'Cancellation reversed',
+    expired: 'Subscription expired',
+  }
+
+  await resend.emails.send({
+    from: FROM,
+    to: ADMIN_EMAIL,
+    subject: `${icons[event]} ${labels[event]}: ${userEmail}`,
+    html: `
+      <div style="font-family: monospace; max-width: 480px; margin: 0 auto; padding: 32px 24px; background: #0f0d1a; color: #e2e0f0;">
+        <p style="font-size: 18px; font-weight: 700; margin-bottom: 20px;">${icons[event]} ${labels[event]}</p>
+        <table style="width: 100%; border-collapse: collapse;">
+          <tr><td style="color: #9895ad; padding: 6px 0; width: 120px;">Email</td><td style="color: #e2e0f0;">${userEmail}</td></tr>
+          <tr><td style="color: #9895ad; padding: 6px 0;">Name</td><td style="color: #e2e0f0;">${userName || '—'}</td></tr>
+          <tr><td style="color: #9895ad; padding: 6px 0;">From</td><td style="color: #e2e0f0;">${fromPlan}</td></tr>
+          <tr><td style="color: #9895ad; padding: 6px 0;">To</td><td style="color: #e2e0f0;">${toPlan}</td></tr>
+          <tr><td style="color: #9895ad; padding: 6px 0;">Time</td><td style="color: #e2e0f0;">${now} (RO)</td></tr>
+        </table>
+      </div>
+    `,
+  })
+}
+
+export async function sendAdminMonthlyReport(stats: {
+  month: string
+  totalUsers: number
+  newUsersThisMonth: number
+  free: number
+  starter: number
+  pro: number
+  elite: number
+  totalPaid: number
+  estimatedMRR: number
+}) {
+  const resend = getResend()
+  if (!resend) return
+
+  await resend.emails.send({
+    from: FROM,
+    to: ADMIN_EMAIL,
+    subject: `📊 Monthly report — ${stats.month}`,
+    html: `
+      <div style="font-family: monospace; max-width: 480px; margin: 0 auto; padding: 32px 24px; background: #0f0d1a; color: #e2e0f0;">
+        <p style="font-size: 18px; font-weight: 700; margin-bottom: 4px;">Monthly Report</p>
+        <p style="color: #9895ad; margin-bottom: 28px;">${stats.month}</p>
+
+        <p style="color: #6366f1; font-weight: 700; margin-bottom: 10px; text-transform: uppercase; font-size: 11px; letter-spacing: 1px;">Users</p>
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 24px;">
+          <tr><td style="color: #9895ad; padding: 5px 0; width: 180px;">Total accounts</td><td style="color: #e2e0f0; font-weight: 700;">${stats.totalUsers}</td></tr>
+          <tr><td style="color: #9895ad; padding: 5px 0;">New this month</td><td style="color: #e2e0f0; font-weight: 700;">+${stats.newUsersThisMonth}</td></tr>
+        </table>
+
+        <p style="color: #6366f1; font-weight: 700; margin-bottom: 10px; text-transform: uppercase; font-size: 11px; letter-spacing: 1px;">Plans</p>
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 24px;">
+          <tr><td style="color: #9895ad; padding: 5px 0; width: 180px;">Free</td><td style="color: #e2e0f0;">${stats.free}</td></tr>
+          <tr><td style="color: #9895ad; padding: 5px 0;">Starter ($29/mo)</td><td style="color: #e2e0f0;">${stats.starter}</td></tr>
+          <tr><td style="color: #9895ad; padding: 5px 0;">Pro ($79/mo)</td><td style="color: #e2e0f0;">${stats.pro}</td></tr>
+          <tr><td style="color: #9895ad; padding: 5px 0;">Elite ($149/mo)</td><td style="color: #e2e0f0;">${stats.elite}</td></tr>
+          <tr style="border-top: 1px solid #3d3857;"><td style="color: #9895ad; padding: 8px 0 5px;">Total paid</td><td style="color: #10b981; font-weight: 700;">${stats.totalPaid}</td></tr>
+        </table>
+
+        <p style="color: #6366f1; font-weight: 700; margin-bottom: 10px; text-transform: uppercase; font-size: 11px; letter-spacing: 1px;">Revenue</p>
+        <table style="width: 100%; border-collapse: collapse;">
+          <tr><td style="color: #9895ad; padding: 5px 0; width: 180px;">Estimated MRR</td><td style="color: #f59e0b; font-weight: 700; font-size: 20px;">$${stats.estimatedMRR}</td></tr>
+        </table>
       </div>
     `,
   })
