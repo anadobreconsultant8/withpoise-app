@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { stripe } from '@/lib/stripe'
 import { prisma } from '@/lib/prisma'
 import { getPlanByPriceId, getCreditsForPlan, PLANS } from '@/lib/plans'
+import { sendPaidWelcomeEmail } from '@/lib/email'
 import type Stripe from 'stripe'
 
 export async function POST(req: NextRequest) {
@@ -66,7 +67,7 @@ export async function POST(req: NextRequest) {
 
         const credits = getCreditsForPlan(planName)
 
-        await prisma.user.update({
+        const newUser = await prisma.user.update({
           where: { stripeCustomerId: customerId },
           data: {
             plan: planName,
@@ -76,7 +77,12 @@ export async function POST(req: NextRequest) {
             stripePriceId: priceId,
             stripeCurrentPeriodEnd: new Date(subscription.current_period_end * 1000),
           },
+          select: { email: true, name: true },
         })
+
+        if (newUser.email && (planName === 'starter' || planName === 'pro' || planName === 'elite')) {
+          sendPaidWelcomeEmail(newUser.email, newUser.name, planName).catch(() => {})
+        }
         break
       }
 

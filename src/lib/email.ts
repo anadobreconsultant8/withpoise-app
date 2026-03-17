@@ -280,7 +280,161 @@ export async function sendReengagementEmail(email: string, name?: string | null,
   })
 }
 
-export async function sendRenewalReminderEmail(email: string, name: string | null, daysLeft: number, planLabel: string, renewalDate: string, portalUrl: string) {
+export async function sendPaidWelcomeEmail(email: string, name: string | null, plan: 'starter' | 'pro' | 'elite') {
+  const resend = getResend()
+  if (!resend) return
+
+  const firstName = name?.split(' ')[0] || 'there'
+  const dashboardUrl = `${BASE_URL}/dashboard`
+  const pricingUrl = `${BASE_URL}/pricing`
+
+  const planConfig = {
+    starter: {
+      label: 'Starter',
+      credits: 30,
+      upsell: {
+        label: 'Pro',
+        price: 79,
+        credits: 100,
+        reason: 'When you\'re closing deals consistently, 30 responses can go fast.',
+      },
+    },
+    pro: {
+      label: 'Pro',
+      credits: 100,
+      upsell: {
+        label: 'Elite',
+        price: 149,
+        credits: 300,
+        reason: 'High-volume closers on our Elite plan never have to think about credits.',
+      },
+    },
+    elite: {
+      label: 'Elite',
+      credits: 300,
+      upsell: null,
+    },
+  }
+
+  const config = planConfig[plan]
+
+  await resend.emails.send({
+    from: FROM,
+    to: email,
+    subject: `You're on ${config.label} — let's close some deals`,
+    html: `
+      <div style="font-family: -apple-system, sans-serif; max-width: 480px; margin: 0 auto; padding: 40px 24px; background: #0f0d1a; color: #e2e0f0;">
+        <div style="margin-bottom: 32px;">
+          <span style="font-size: 20px; font-weight: 700; color: #e2e0f0;">with<span style="color: #6366f1;">POISE</span></span>
+        </div>
+
+        <h1 style="font-size: 22px; font-weight: 700; margin-bottom: 12px; color: #e2e0f0;">
+          You're on ${config.label}. ${config.credits} responses ready.
+        </h1>
+
+        <p style="color: #9895ad; line-height: 1.6; margin-bottom: 24px;">
+          Welcome${plan === 'elite' ? ' to the top tier' : ''}, ${firstName}. Your <strong style="color: #e2e0f0;">${config.credits} monthly responses</strong> are active and ready to use. Every price objection you face from now on has a structured, confident answer.
+        </p>
+
+        <p style="color: #9895ad; line-height: 1.6; margin-bottom: 8px;"><strong style="color: #e2e0f0;">Make the most of it:</strong></p>
+        <ul style="color: #9895ad; line-height: 1.8; margin: 0 0 28px 0; padding-left: 20px;">
+          <li>Paste your client's exact message for a personalized response</li>
+          <li>Try all 4 tones — Diplomatic, Balanced, Assertive, Very Firm</li>
+          <li>Use your response history to track what's working</li>
+        </ul>
+
+        <a href="${dashboardUrl}" style="display: inline-block; padding: 12px 28px; background: #6366f1; color: white; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 15px;">
+          Go to dashboard →
+        </a>
+
+        ${config.upsell ? `
+        <div style="margin-top: 32px; padding: 16px 20px; border: 1px solid #3d3857; border-radius: 10px; background: #1e1b2e;">
+          <p style="color: #9895ad; font-size: 13px; line-height: 1.6; margin: 0;">
+            ${config.upsell.reason} When you're ready, <a href="${pricingUrl}" style="color: #6366f1;">upgrade to ${config.upsell.label}</a> for ${config.upsell.credits} responses/month at $${config.upsell.price}/mo.
+          </p>
+        </div>
+        ` : `
+        <div style="margin-top: 32px; padding: 16px 20px; border: 1px solid #6366f1; border-radius: 10px; background: #1e1b2e;">
+          <p style="color: #9895ad; font-size: 13px; line-height: 1.6; margin: 0;">
+            You're on our highest tier. If you ever need custom volume or team access, reply to this email and we'll work something out.
+          </p>
+        </div>
+        `}
+
+        ${emailFooter('commercial')}
+      </div>
+    `,
+  })
+}
+
+export async function sendCreditsLowPaidEmail(email: string, name: string | null, plan: 'starter' | 'pro') {
+  const resend = getResend()
+  if (!resend) return
+
+  const firstName = name?.split(' ')[0] || 'there'
+  const pricingUrl = `${BASE_URL}/pricing`
+
+  const config = {
+    starter: {
+      label: 'Starter',
+      creditsLeft: 6,
+      total: 30,
+      nextPlan: 'Pro',
+      nextPrice: 79,
+      nextCredits: 100,
+    },
+    pro: {
+      label: 'Pro',
+      creditsLeft: 20,
+      total: 100,
+      nextPlan: 'Elite',
+      nextPrice: 149,
+      nextCredits: 300,
+    },
+  }
+
+  const c = config[plan]
+
+  await resend.emails.send({
+    from: FROM,
+    to: email,
+    subject: `${c.creditsLeft} responses left this month — keep your momentum`,
+    html: `
+      <div style="font-family: -apple-system, sans-serif; max-width: 480px; margin: 0 auto; padding: 40px 24px; background: #0f0d1a; color: #e2e0f0;">
+        <div style="margin-bottom: 32px;">
+          <span style="font-size: 20px; font-weight: 700; color: #e2e0f0;">with<span style="color: #6366f1;">POISE</span></span>
+        </div>
+
+        <h1 style="font-size: 22px; font-weight: 700; margin-bottom: 12px; color: #e2e0f0;">
+          ${c.creditsLeft} responses left this month
+        </h1>
+
+        <p style="color: #9895ad; line-height: 1.6; margin-bottom: 16px;">
+          Hi ${firstName}, you've used ${c.total - c.creditsLeft} of your ${c.total} ${c.label} responses — which means you've been busy closing. Good.
+        </p>
+
+        <p style="color: #9895ad; line-height: 1.6; margin-bottom: 24px;">
+          If you're handling this volume of objections every month, <strong style="color: #e2e0f0;">${c.nextPlan}</strong> might be a better fit: <strong style="color: #e2e0f0;">${c.nextCredits} responses/month</strong> at $${c.nextPrice}/mo.
+        </p>
+
+        <div style="background: #1e1b2e; border: 2px solid #6366f1; border-radius: 12px; padding: 20px; margin-bottom: 28px;">
+          <p style="color: #e2e0f0; font-weight: 700; margin: 0 0 8px 0;">${c.nextPlan} — $${c.nextPrice}/month</p>
+          <p style="color: #9895ad; margin: 0; font-size: 14px;">${c.nextCredits} responses · All features · Cancel anytime</p>
+        </div>
+
+        <a href="${pricingUrl}" style="display: inline-block; padding: 12px 28px; background: #6366f1; color: white; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 15px;">
+          Upgrade to ${c.nextPlan}
+        </a>
+
+        <p style="color: #9895ad; font-size: 12px; margin-top: 16px;">Your ${c.label} plan renews automatically — no action needed if you want to stay.</p>
+
+        ${emailFooter('commercial')}
+      </div>
+    `,
+  })
+}
+
+export async function sendRenewalReminderEmail(email: string, name: string | null, daysLeft: number, plan: string, planLabel: string, renewalDate: string, portalUrl: string) {
   const resend = getResend()
   if (!resend) return
 
@@ -311,6 +465,22 @@ export async function sendRenewalReminderEmail(email: string, name: string | nul
         <a href="${portalUrl}" style="display: inline-block; padding: 12px 28px; background: #6366f1; color: white; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 15px;">
           Manage billing
         </a>
+
+        ${plan === 'starter' ? `
+        <div style="margin-top: 28px; padding: 16px 20px; border: 1px solid #3d3857; border-radius: 10px; background: #1e1b2e;">
+          <p style="color: #9895ad; font-size: 13px; line-height: 1.6; margin: 0 0 8px 0;">
+            <strong style="color: #e2e0f0;">Closing more deals?</strong> Pro gives you 100 responses/month for $79 — over 3× more volume for less than 3× the price.
+          </p>
+          <a href="${BASE_URL}/pricing" style="color: #6366f1; font-size: 13px; font-weight: 600; text-decoration: none;">Upgrade to Pro →</a>
+        </div>
+        ` : plan === 'pro' ? `
+        <div style="margin-top: 28px; padding: 16px 20px; border: 1px solid #3d3857; border-radius: 10px; background: #1e1b2e;">
+          <p style="color: #9895ad; font-size: 13px; line-height: 1.6; margin: 0 0 8px 0;">
+            <strong style="color: #e2e0f0;">Running a high-volume pipeline?</strong> Elite gives you 300 responses/month for $149 — so you never have to think about credits again.
+          </p>
+          <a href="${BASE_URL}/pricing" style="color: #6366f1; font-size: 13px; font-weight: 600; text-decoration: none;">Upgrade to Elite →</a>
+        </div>
+        ` : ''}
 
         ${emailFooter('commercial')}
       </div>

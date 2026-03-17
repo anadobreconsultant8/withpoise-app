@@ -63,6 +63,7 @@ export async function GET(req: NextRequest) {
         user.email!,
         user.name,
         5,
+        user.plan,
         planLabel,
         renewalDate,
         portalSession.url,
