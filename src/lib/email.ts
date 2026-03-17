@@ -74,6 +74,212 @@ export async function sendWelcomeEmail(email: string, name?: string | null) {
   })
 }
 
+export async function sendFirstUseEmail(email: string, name?: string | null) {
+  const resend = getResend()
+  if (!resend) return
+
+  const firstName = name?.split(' ')[0] || 'there'
+  const pricingUrl = `${BASE_URL}/pricing`
+
+  await resend.emails.send({
+    from: FROM,
+    to: email,
+    subject: 'You just handled your first objection — here\'s what\'s next',
+    html: `
+      <div style="font-family: -apple-system, sans-serif; max-width: 480px; margin: 0 auto; padding: 40px 24px; background: #0f0d1a; color: #e2e0f0;">
+        <div style="margin-bottom: 32px;">
+          <span style="font-size: 20px; font-weight: 700; color: #e2e0f0;">with<span style="color: #6366f1;">POISE</span></span>
+        </div>
+
+        <h1 style="font-size: 22px; font-weight: 700; margin-bottom: 12px; color: #e2e0f0;">
+          First objection handled. 🎯
+        </h1>
+
+        <p style="color: #9895ad; line-height: 1.6; margin-bottom: 16px;">
+          Nice work, ${firstName}. You've just seen the POISE framework in action — a structured, professional response that holds your price and moves the deal forward.
+        </p>
+
+        <p style="color: #9895ad; line-height: 1.6; margin-bottom: 24px;">
+          <strong style="color: #e2e0f0;">Pro tip:</strong> Paste your client's exact message in the "Client message" field. The more context you give, the more personalized and persuasive the response.
+        </p>
+
+        <p style="color: #9895ad; line-height: 1.6; margin-bottom: 28px;">
+          You have <strong style="color: #f59e0b;">4 free responses</strong> left. When you're ready for unlimited access, our Starter plan is just $29/month.
+        </p>
+
+        <a href="${pricingUrl}" style="display: inline-block; padding: 12px 28px; background: #6366f1; color: white; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 15px;">
+          See plans & pricing
+        </a>
+
+        ${emailFooter('commercial')}
+      </div>
+    `,
+  })
+}
+
+export async function sendRunningLowEmail(email: string, name?: string | null) {
+  const resend = getResend()
+  if (!resend) return
+
+  const firstName = name?.split(' ')[0] || 'there'
+  const pricingUrl = `${BASE_URL}/pricing`
+
+  await resend.emails.send({
+    from: FROM,
+    to: email,
+    subject: '2 free responses left — don\'t run out mid-deal',
+    html: `
+      <div style="font-family: -apple-system, sans-serif; max-width: 480px; margin: 0 auto; padding: 40px 24px; background: #0f0d1a; color: #e2e0f0;">
+        <div style="margin-bottom: 32px;">
+          <span style="font-size: 20px; font-weight: 700; color: #e2e0f0;">with<span style="color: #6366f1;">POISE</span></span>
+        </div>
+
+        <h1 style="font-size: 22px; font-weight: 700; margin-bottom: 12px; color: #e2e0f0;">
+          You have 2 free responses left
+        </h1>
+
+        <p style="color: #9895ad; line-height: 1.6; margin-bottom: 16px;">
+          Hi ${firstName}, you've used 3 of your 5 free responses. You're clearly handling objections — don't let a credit limit stop you when a deal is on the line.
+        </p>
+
+        <div style="background: #1e1b2e; border: 1px solid #3d3857; border-radius: 12px; padding: 20px; margin-bottom: 24px;">
+          <p style="color: #e2e0f0; font-weight: 600; margin: 0 0 12px 0; font-size: 15px;">Starter — $29/month</p>
+          <ul style="color: #9895ad; line-height: 1.8; margin: 0; padding-left: 20px;">
+            <li>30 responses/month</li>
+            <li>All 19 objection types</li>
+            <li>Full POISE framework</li>
+            <li>Cancel anytime</li>
+          </ul>
+        </div>
+
+        <a href="${pricingUrl}" style="display: inline-block; padding: 12px 28px; background: #6366f1; color: white; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 15px;">
+          Upgrade now — from $29/mo
+        </a>
+
+        <p style="color: #9895ad; font-size: 12px; margin-top: 16px;">7-day money-back guarantee. No questions asked.</p>
+
+        ${emailFooter('commercial')}
+      </div>
+    `,
+  })
+}
+
+export async function sendCreditsExhaustedEmail(email: string, name?: string | null) {
+  const resend = getResend()
+  if (!resend) return
+
+  const firstName = name?.split(' ')[0] || 'there'
+  const pricingUrl = `${BASE_URL}/pricing`
+
+  await resend.emails.send({
+    from: FROM,
+    to: email,
+    subject: 'You\'ve used all 5 free responses — upgrade to keep closing',
+    html: `
+      <div style="font-family: -apple-system, sans-serif; max-width: 480px; margin: 0 auto; padding: 40px 24px; background: #0f0d1a; color: #e2e0f0;">
+        <div style="margin-bottom: 32px;">
+          <span style="font-size: 20px; font-weight: 700; color: #e2e0f0;">with<span style="color: #6366f1;">POISE</span></span>
+        </div>
+
+        <h1 style="font-size: 22px; font-weight: 700; margin-bottom: 12px; color: #e2e0f0;">
+          You've used all 5 free responses
+        </h1>
+
+        <p style="color: #9895ad; line-height: 1.6; margin-bottom: 16px;">
+          ${firstName}, your free responses are gone — which means you've been putting the POISE framework to work. That's exactly the point.
+        </p>
+
+        <p style="color: #9895ad; line-height: 1.6; margin-bottom: 24px;">
+          The next price objection is coming. When it does, you can either improvise — or generate a structured, confident response in seconds. Upgrade now and be ready.
+        </p>
+
+        <div style="background: #1e1b2e; border: 2px solid #6366f1; border-radius: 12px; padding: 20px; margin-bottom: 24px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+            <p style="color: #e2e0f0; font-weight: 700; margin: 0; font-size: 16px;">Pro — Most Popular</p>
+            <p style="color: #f59e0b; font-weight: 700; margin: 0; font-size: 16px;">$79/month</p>
+          </div>
+          <ul style="color: #9895ad; line-height: 1.8; margin: 0; padding-left: 20px;">
+            <li><strong style="color: #e2e0f0;">100 responses/month</strong></li>
+            <li>All 19 objection types</li>
+            <li>Full POISE framework</li>
+            <li>Cancel anytime</li>
+          </ul>
+        </div>
+
+        <a href="${pricingUrl}" style="display: inline-block; padding: 14px 32px; background: #6366f1; color: white; text-decoration: none; border-radius: 8px; font-weight: 700; font-size: 16px;">
+          Upgrade and keep closing →
+        </a>
+
+        <p style="color: #9895ad; font-size: 12px; margin-top: 16px;">7-day money-back guarantee. Cancel anytime.</p>
+
+        ${emailFooter('commercial')}
+      </div>
+    `,
+  })
+}
+
+export async function sendReengagementEmail(email: string, name?: string | null, type: 'no-activity' | 'still-free' = 'no-activity') {
+  const resend = getResend()
+  if (!resend) return
+
+  const firstName = name?.split(' ')[0] || 'there'
+  const dashboardUrl = `${BASE_URL}/dashboard`
+  const pricingUrl = `${BASE_URL}/pricing`
+
+  const isNoActivity = type === 'no-activity'
+
+  await resend.emails.send({
+    from: FROM,
+    to: email,
+    subject: isNoActivity
+      ? 'Your 5 free responses are still waiting, ' + firstName
+      : 'Still handling price objections manually?',
+    html: `
+      <div style="font-family: -apple-system, sans-serif; max-width: 480px; margin: 0 auto; padding: 40px 24px; background: #0f0d1a; color: #e2e0f0;">
+        <div style="margin-bottom: 32px;">
+          <span style="font-size: 20px; font-weight: 700; color: #e2e0f0;">with<span style="color: #6366f1;">POISE</span></span>
+        </div>
+
+        ${isNoActivity ? `
+        <h1 style="font-size: 22px; font-weight: 700; margin-bottom: 12px; color: #e2e0f0;">
+          Your free responses are still waiting
+        </h1>
+
+        <p style="color: #9895ad; line-height: 1.6; margin-bottom: 16px;">
+          Hi ${firstName}, you signed up for withPOISE but haven't generated a response yet. Your 5 free responses are still there — no card needed.
+        </p>
+
+        <p style="color: #9895ad; line-height: 1.6; margin-bottom: 28px;">
+          It takes under 30 seconds: pick the objection type, choose your tone, paste your client's message if you have one, and get a ready-to-send POISE response.
+        </p>
+
+        <a href="${dashboardUrl}" style="display: inline-block; padding: 12px 28px; background: #6366f1; color: white; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 15px;">
+          Try it now — it's free
+        </a>
+        ` : `
+        <h1 style="font-size: 22px; font-weight: 700; margin-bottom: 12px; color: #e2e0f0;">
+          Still handling price objections manually?
+        </h1>
+
+        <p style="color: #9895ad; line-height: 1.6; margin-bottom: 16px;">
+          Hi ${firstName}, you tried withPOISE a few days ago. If you're still writing objection responses from scratch — or worse, thinking about discounts — there's a better way.
+        </p>
+
+        <p style="color: #9895ad; line-height: 1.6; margin-bottom: 24px;">
+          Our Starter plan gives you <strong style="color: #e2e0f0;">30 responses/month</strong> for $29. That's less than one lost deal is worth.
+        </p>
+
+        <a href="${pricingUrl}" style="display: inline-block; padding: 12px 28px; background: #6366f1; color: white; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 15px;">
+          See plans — from $29/mo
+        </a>
+        `}
+
+        ${emailFooter('commercial')}
+      </div>
+    `,
+  })
+}
+
 export async function sendRenewalReminderEmail(email: string, name: string | null, daysLeft: number, planLabel: string, renewalDate: string, portalUrl: string) {
   const resend = getResend()
   if (!resend) return

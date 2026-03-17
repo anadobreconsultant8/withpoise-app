@@ -23,6 +23,8 @@ model User {
   stripePriceId          String?
   stripeCurrentPeriodEnd   DateTime?
   stripeCancelAtPeriodEnd  Boolean   @default(false)
+  emailSentNoActivity      Boolean   @default(false)
+  emailSentReengage        Boolean   @default(false)
   createdAt              DateTime     @default(now())
   updatedAt              DateTime     @updatedAt
   generations            Generation[]

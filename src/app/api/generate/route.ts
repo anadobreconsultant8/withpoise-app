@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { generateObjectionResponse } from '@/lib/ai-engine'
 import { generateLimiter, applyRateLimit } from '@/lib/ratelimit'
 import { OBJECTION_CATEGORIES, TONES, RELATIONSHIP_LEVELS, OBJECTIVES } from '@/lib/objection-types'
+import { sendFirstUseEmail, sendRunningLowEmail, sendCreditsExhaustedEmail } from '@/lib/email'
 
 const VALID_OBJECTION_IDS = OBJECTION_CATEGORIES.flatMap(c => c.objections.map(o => o.id))
 const VALID_TONE_IDS = TONES.map(t => t.id)
@@ -24,7 +25,7 @@ export async function POST(req: NextRequest) {
 
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: { creditsLeft: true, name: true },
+      select: { creditsLeft: true, creditsTotal: true, name: true, email: true, plan: true },
     })
 
     if (!user) {
@@ -99,6 +100,18 @@ export async function POST(req: NextRequest) {
         },
       }),
     ])
+
+    // Fire-and-forget upsell emails for free plan users only
+    if (user.plan === 'free' && user.creditsTotal === 5 && user.email) {
+      const left = updatedUser.creditsLeft
+      if (left === 4) {
+        sendFirstUseEmail(user.email, user.name).catch(() => {})
+      } else if (left === 2) {
+        sendRunningLowEmail(user.email, user.name).catch(() => {})
+      } else if (left === 0) {
+        sendCreditsExhaustedEmail(user.email, user.name).catch(() => {})
+      }
+    }
 
     return NextResponse.json({ reply, creditsLeft: updatedUser.creditsLeft })
   } catch (error) {
