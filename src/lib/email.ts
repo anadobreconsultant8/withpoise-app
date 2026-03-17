@@ -2,7 +2,7 @@ import { Resend } from 'resend'
 
 const FROM = 'withPOISE <hello@withpoise.net>'
 const BASE_URL = process.env.NEXTAUTH_URL || 'https://withpoise.net'
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'ana@withpoise.com'
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'hello@withpoise.net'
 
 function getResend() {
   if (!process.env.RESEND_API_KEY) return null
