@@ -53,10 +53,8 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>
-        <SessionProvider>{children}</SessionProvider>
-        <Analytics />
-        <Script id="meta-pixel" strategy="afterInteractive">{`
+      <head>
+        <Script id="meta-pixel" strategy="beforeInteractive">{`
           !function(f,b,e,v,n,t,s)
           {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
           n.callMethod.apply(n,arguments):n.queue.push(arguments)};
@@ -74,6 +72,10 @@ export default function RootLayout({
             alt=""
           />
         </noscript>
+      </head>
+      <body>
+        <SessionProvider>{children}</SessionProvider>
+        <Analytics />
       </body>
     </html>
   )
