@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useSession } from 'next-auth/react'
 import { useSearchParams } from 'next/navigation'
 import {
@@ -9,7 +9,8 @@ import {
 } from 'lucide-react'
 import { Navbar } from '@/components/navbar'
 import { OBJECTION_CATEGORIES, TONES, RELATIONSHIP_LEVELS, OBJECTIVES } from '@/lib/objection-types'
-import { CREDIT_PACKS } from '@/lib/plans'
+import { CREDIT_PACKS, PLANS } from '@/lib/plans'
+import { pixelTrack } from '@/lib/meta-pixel'
 
 interface UserData {
   id: string
@@ -115,6 +116,7 @@ export function DashboardClient() {
 
   const upgraded = searchParams.get('upgraded')
   const creditsAdded = searchParams.get('credits_added')
+  const subscribeFired = useRef(false)
   useEffect(() => {
     if (!upgraded && !creditsAdded) return
     let attempts = 0
@@ -124,6 +126,19 @@ export function DashboardClient() {
       if (!res.ok) return
       const data = await res.json()
       setUser(data)
+      // Fire Subscribe pixel event once when plan is confirmed
+      if (upgraded && !subscribeFired.current && data.plan && data.plan !== 'free') {
+        const planInfo = PLANS[data.plan as keyof typeof PLANS]
+        if (planInfo) {
+          pixelTrack('Subscribe', {
+            value: planInfo.price,
+            currency: 'USD',
+            predicted_ltv: planInfo.price,
+            content_name: data.plan,
+          })
+          subscribeFired.current = true
+        }
+      }
       if (data.creditsTotal > 5 || data.creditsLeft > 5 || attempts >= 10) clearInterval(poll)
     }, 1000)
     return () => clearInterval(poll)

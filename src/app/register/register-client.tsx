@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Zap, Check, AlertCircle, Sparkles } from 'lucide-react'
 import { PLANS, PlanName } from '@/lib/plans'
+import { pixelTrack } from '@/lib/meta-pixel'
 
 const BENEFITS = [
   '5 free responses — no credit card required',
@@ -88,6 +89,8 @@ export function RegisterClient() {
         router.push('/login')
         return
       }
+
+      pixelTrack('CompleteRegistration', { content_name: 'free' })
 
       if (planData) {
         await redirectToCheckout(planData.priceId)
