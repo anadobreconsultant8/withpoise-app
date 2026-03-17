@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { Navbar } from '@/components/navbar'
-import { User, Lock, CreditCard, Zap, Check, AlertCircle, Loader2, Download, Trash2 } from 'lucide-react'
+import { User, Lock, CreditCard, Zap, Check, AlertCircle, Loader2, Download, Trash2, XCircle } from 'lucide-react'
 import { signOut } from 'next-auth/react'
 
 interface UserData {
@@ -17,6 +17,7 @@ interface UserData {
   hasPassword: boolean
   stripeSubscriptionId: string | null
   stripeCurrentPeriodEnd: string | null
+  stripeCancelAtPeriodEnd: boolean
   createdAt: string
 }
 
@@ -46,6 +47,10 @@ export function AccountClient() {
   const [savingPassword, setSavingPassword] = useState(false)
   const [passwordSuccess, setPasswordSuccess] = useState(false)
   const [passwordError, setPasswordError] = useState('')
+
+  // Cancel subscription
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false)
+  const [cancellingSubscription, setCancellingSubscription] = useState(false)
 
   // Delete account
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
@@ -132,6 +137,21 @@ export function AccountClient() {
     }
   }
 
+  async function handleCancelSubscription(resume = false) {
+    setCancellingSubscription(true)
+    const res = await fetch('/api/stripe/cancel-subscription', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ resume }),
+    })
+    const data = await res.json()
+    if (res.ok) {
+      setUser(prev => prev ? { ...prev, stripeCancelAtPeriodEnd: data.cancelAtPeriodEnd } : prev)
+      setShowCancelConfirm(false)
+    }
+    setCancellingSubscription(false)
+  }
+
   async function handleBilling() {
     const res = await fetch('/api/stripe/portal', { method: 'POST' })
     const data = await res.json()
@@ -153,6 +173,8 @@ export function AccountClient() {
   const renewalDate = user.stripeCurrentPeriodEnd
     ? new Date(user.stripeCurrentPeriodEnd).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
     : null
+  const isPaidPlan = user.plan !== 'free'
+  const isCancelling = user.stripeCancelAtPeriodEnd
 
   return (
     <div className="min-h-screen">
@@ -170,6 +192,15 @@ export function AccountClient() {
             <h2 className="text-base font-semibold text-[var(--color-text)]">Plan & Credits</h2>
           </div>
 
+          {isCancelling && renewalDate && (
+            <div className="mb-4 flex items-start gap-2 px-3 py-2 rounded-lg bg-[var(--color-accent)]/10 border border-[var(--color-accent)]/30">
+              <AlertCircle className="w-4 h-4 text-[var(--color-accent)] mt-0.5 shrink-0" />
+              <p className="text-xs text-[var(--color-accent)]">
+                Your subscription is scheduled to cancel on <strong>{renewalDate}</strong>. You&apos;ll keep access until then.
+              </p>
+            </div>
+          )}
+
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-4">
             <div>
               <p className="text-xs text-[var(--color-text-muted)] mb-1">Current plan</p>
@@ -181,29 +212,76 @@ export function AccountClient() {
             </div>
             {renewalDate && (
               <div>
-                <p className="text-xs text-[var(--color-text-muted)] mb-1">Renews on</p>
+                <p className="text-xs text-[var(--color-text-muted)] mb-1">
+                  {isCancelling ? 'Cancels on' : 'Renews on'}
+                </p>
                 <p className="text-sm font-semibold text-[var(--color-text)]">{renewalDate}</p>
               </div>
             )}
           </div>
 
           <div className="flex gap-3 flex-wrap">
-            {user.plan === 'free' ? (
-              <a href="/pricing" className="btn-primary text-sm px-4 py-2">
-                Upgrade plan
-              </a>
+            {!isPaidPlan ? (
+              <>
+                <a href="/pricing" className="btn-primary text-sm px-4 py-2">
+                  Upgrade plan
+                </a>
+                <a href="/pricing" className="btn-secondary text-sm px-4 py-2">
+                  View plans
+                </a>
+              </>
             ) : (
-              <button onClick={handleBilling} className="btn-secondary text-sm px-4 py-2">
-                <CreditCard className="w-4 h-4" />
-                Billing & receipts
-              </button>
-            )}
-            {user.plan === 'free' && (
-              <a href="/pricing" className="btn-secondary text-sm px-4 py-2">
-                View plans
-              </a>
+              <>
+                <button onClick={handleBilling} className="btn-secondary text-sm px-4 py-2">
+                  <CreditCard className="w-4 h-4" />
+                  Billing & receipts
+                </button>
+                {isCancelling ? (
+                  <button
+                    onClick={() => handleCancelSubscription(true)}
+                    disabled={cancellingSubscription}
+                    className="flex items-center gap-2 btn-secondary text-sm px-4 py-2 border-[var(--color-success)]/40 text-[var(--color-success)] hover:bg-[var(--color-success)]/10"
+                  >
+                    {cancellingSubscription ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                    Resume subscription
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => setShowCancelConfirm(true)}
+                    className="flex items-center gap-2 btn-secondary text-sm px-4 py-2 border-[var(--color-danger)]/40 text-[var(--color-danger)] hover:bg-[var(--color-danger)]/10"
+                  >
+                    <XCircle className="w-4 h-4" />
+                    Cancel subscription
+                  </button>
+                )}
+              </>
             )}
           </div>
+
+          {/* Cancel confirmation */}
+          {showCancelConfirm && (
+            <div className="mt-4 p-4 rounded-xl border border-[var(--color-danger)]/40 bg-[var(--color-danger)]/5">
+              <p className="text-sm font-semibold text-[var(--color-text)] mb-1">Cancel your subscription?</p>
+              <p className="text-xs text-[var(--color-text-muted)] mb-3">
+                You&apos;ll keep access and your credits until <strong className="text-[var(--color-text)]">{renewalDate}</strong>. After that, your account reverts to Free.
+              </p>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => handleCancelSubscription(false)}
+                  disabled={cancellingSubscription}
+                  className="px-4 py-2 rounded-lg text-sm font-semibold bg-[var(--color-danger)] text-white disabled:opacity-40 hover:opacity-90 transition-opacity"
+                >
+                  {cancellingSubscription ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Yes, cancel'}
+                </button>
+                <button
+                  onClick={() => setShowCancelConfirm(false)}
+                  className="btn-secondary text-sm px-4 py-2"
+                >
+                  Keep subscription
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Profile */}

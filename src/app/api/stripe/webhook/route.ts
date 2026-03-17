@@ -137,6 +137,7 @@ export async function POST(req: NextRequest) {
             creditsTotal: newCredits,
             stripePriceId: priceId,
             stripeCurrentPeriodEnd: new Date(subscription.current_period_end * 1000),
+            stripeCancelAtPeriodEnd: subscription.cancel_at_period_end,
           },
         })
         break
@@ -155,6 +156,7 @@ export async function POST(req: NextRequest) {
             stripeSubscriptionId: null,
             stripePriceId: null,
             stripeCurrentPeriodEnd: null,
+            stripeCancelAtPeriodEnd: false,
           },
         })
         break

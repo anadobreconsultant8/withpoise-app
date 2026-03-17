@@ -21,7 +21,8 @@ model User {
   stripeCustomerId       String?      @unique
   stripeSubscriptionId   String?
   stripePriceId          String?
-  stripeCurrentPeriodEnd DateTime?
+  stripeCurrentPeriodEnd   DateTime?
+  stripeCancelAtPeriodEnd  Boolean   @default(false)
   createdAt              DateTime     @default(now())
   updatedAt              DateTime     @updatedAt
   generations            Generation[]
