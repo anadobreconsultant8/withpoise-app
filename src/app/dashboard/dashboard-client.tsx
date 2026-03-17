@@ -5,7 +5,7 @@ import { useSession } from 'next-auth/react'
 import { useSearchParams } from 'next/navigation'
 import {
   Zap, ChevronDown, ChevronRight, Copy, Check, RotateCcw,
-  Clock, Loader2, AlertCircle, Sparkles, X, Plus
+  Clock, Loader2, AlertCircle, Sparkles, X, Plus, PlayCircle, TrendingUp
 } from 'lucide-react'
 import { Navbar } from '@/components/navbar'
 import { OBJECTION_CATEGORIES, TONES, RELATIONSHIP_LEVELS, OBJECTIVES } from '@/lib/objection-types'
@@ -29,11 +29,49 @@ interface HistoryItem {
   createdAt: string
 }
 
+interface PoiseStep {
+  key: 'P' | 'O' | 'I' | 'S' | 'E'
+  text: string
+}
+
+const POISE_META: Record<string, { label: string; color: string; bg: string }> = {
+  P: { label: 'Acknowledge', color: '#6366f1', bg: 'rgba(99,102,241,0.12)' },
+  O: { label: 'Reframe',     color: '#8b5cf6', bg: 'rgba(139,92,246,0.12)' },
+  I: { label: 'Logic',       color: '#a78bfa', bg: 'rgba(167,139,250,0.12)' },
+  S: { label: 'Boundary',    color: '#f59e0b', bg: 'rgba(245,158,11,0.12)' },
+  E: { label: 'Next Step',   color: '#10b981', bg: 'rgba(16,185,129,0.12)' },
+}
+
+function parsePoiseSteps(text: string): PoiseStep[] | null {
+  const regex = /\[([POISE])\]\s*([\s\S]*?)(?=\n?\s*\[[POISE]\]|$)/g
+  const steps: PoiseStep[] = []
+  let match
+  while ((match = regex.exec(text)) !== null) {
+    const key = match[1] as PoiseStep['key']
+    const content = match[2].trim()
+    if (content) steps.push({ key, text: content })
+  }
+  return steps.length === 5 ? steps : null
+}
+
+function stripPoiseMarkers(text: string): string {
+  return text.replace(/\[[POISE]\]\s*/g, '').trim()
+}
+
+const EXAMPLE_SCENARIO = {
+  objectionType: 'too_expensive',
+  categoryId: 'price_budget',
+  tone: 'balanced',
+  clientMessage: "We've compared a few proposals and honestly your price is significantly higher than the others we received. We really like your work but it's hard to justify this gap to our board.",
+  contractValue: '$18,000',
+  relationshipLevel: 'warm',
+  objective: 'close',
+}
+
 export function DashboardClient() {
   const { data: session } = useSession()
   const searchParams = useSearchParams()
 
-  // User state
   const [user, setUser] = useState<UserData | null>(null)
 
   // Form state
@@ -48,8 +86,10 @@ export function DashboardClient() {
   // Output state
   const [isGenerating, setIsGenerating] = useState(false)
   const [generatedReply, setGeneratedReply] = useState('')
+  const [poiseSteps, setPoiseSteps] = useState<PoiseStep[] | null>(null)
   const [error, setError] = useState('')
   const [copied, setCopied] = useState(false)
+  const [exampleLoaded, setExampleLoaded] = useState(false)
 
   // History
   const [history, setHistory] = useState<HistoryItem[]>([])
@@ -73,12 +113,10 @@ export function DashboardClient() {
     fetchHistory()
   }, [fetchUser, fetchHistory])
 
-  // Show success toast if redirected from Stripe
   const upgraded = searchParams.get('upgraded')
   const creditsAdded = searchParams.get('credits_added')
   useEffect(() => {
     if (!upgraded && !creditsAdded) return
-    // Webhook may be slightly delayed — poll until credits update
     let attempts = 0
     const poll = setInterval(async () => {
       attempts++
@@ -86,23 +124,38 @@ export function DashboardClient() {
       if (!res.ok) return
       const data = await res.json()
       setUser(data)
-      // Stop polling when credits updated or after 10 attempts (~10s)
-      if (data.creditsTotal > 5 || data.creditsLeft > 5 || attempts >= 10) {
-        clearInterval(poll)
-      }
+      if (data.creditsTotal > 5 || data.creditsLeft > 5 || attempts >= 10) clearInterval(poll)
     }, 1000)
     return () => clearInterval(poll)
   }, [upgraded, creditsAdded])
 
-  async function handleGenerate() {
+  function loadExample() {
+    setSelectedObjection(EXAMPLE_SCENARIO.objectionType)
+    setExpandedCategory(EXAMPLE_SCENARIO.categoryId)
+    setTone(EXAMPLE_SCENARIO.tone)
+    setClientMessage(EXAMPLE_SCENARIO.clientMessage)
+    setContractValue(EXAMPLE_SCENARIO.contractValue)
+    setRelationshipLevel(EXAMPLE_SCENARIO.relationshipLevel)
+    setObjective(EXAMPLE_SCENARIO.objective)
+    setGeneratedReply('')
+    setPoiseSteps(null)
+    setError('')
+    setExampleLoaded(true)
+  }
+
+  async function handleGenerate(toneOverride?: string) {
     if (!selectedObjection) {
       setError('Please select an objection type.')
       return
     }
 
+    const activeTone = toneOverride ?? tone
+
     setError('')
     setIsGenerating(true)
     setGeneratedReply('')
+    setPoiseSteps(null)
+    setExampleLoaded(false)
 
     try {
       const res = await fetch('/api/generate', {
@@ -110,7 +163,7 @@ export function DashboardClient() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           objectionType: selectedObjection,
-          tone,
+          tone: activeTone,
           contractValue: contractValue || undefined,
           relationshipLevel: relationshipLevel || undefined,
           objective: objective || undefined,
@@ -126,11 +179,8 @@ export function DashboardClient() {
       }
 
       setGeneratedReply(data.reply)
-
-      // Update credits locally
+      setPoiseSteps(parsePoiseSteps(data.reply))
       setUser(prev => prev ? { ...prev, creditsLeft: data.creditsLeft } : prev)
-
-      // Refresh history
       fetchHistory()
     } catch {
       setError('Something went wrong. Please try again.')
@@ -139,29 +189,46 @@ export function DashboardClient() {
     }
   }
 
+  function handleRegenerateWithTone(newTone: string) {
+    setTone(newTone)
+    handleGenerate(newTone)
+  }
+
   async function handleCopy() {
-    await navigator.clipboard.writeText(generatedReply)
+    const textToCopy = stripPoiseMarkers(generatedReply)
+    await navigator.clipboard.writeText(textToCopy)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
   }
 
   function handleReset() {
     setGeneratedReply('')
+    setPoiseSteps(null)
     setError('')
+    setExampleLoaded(false)
   }
 
   function loadHistoryItem(item: HistoryItem) {
     setGeneratedReply(item.generatedReply)
+    setPoiseSteps(parsePoiseSteps(item.generatedReply))
     setSelectedObjection(item.objectionType)
     setTone(item.tone)
   }
 
   function formatDate(dateStr: string) {
-    const d = new Date(dateStr)
-    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+    return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
   }
 
   const noCredits = user ? user.creditsLeft <= 0 : false
+
+  // Stats
+  const now = new Date()
+  const thisMonthCount = history.filter(item => {
+    const d = new Date(item.createdAt)
+    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()
+  }).length
+
+  const otherTones = TONES.filter(t => t.id !== tone)
 
   async function handleBuyCredits(priceId: string, packId: string) {
     setBuyingPack(packId)
@@ -188,12 +255,8 @@ export function DashboardClient() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Navbar
-        creditsLeft={user?.creditsLeft}
-        creditsTotal={user?.creditsTotal}
-      />
+      <Navbar creditsLeft={user?.creditsLeft} creditsTotal={user?.creditsTotal} />
 
-      {/* Upgrade banner if no credits */}
       {noCredits && (
         <div className="bg-[var(--color-accent)]/10 border-b border-[var(--color-accent)]/30 px-4 py-2.5 text-center text-sm">
           <span className="text-[var(--color-accent)] font-medium">You&apos;re out of credits.</span>{' '}
@@ -202,7 +265,6 @@ export function DashboardClient() {
         </div>
       )}
 
-      {/* Trial nudge — free plan users with credits remaining */}
       {user && user.plan === 'free' && !noCredits && (
         <div className="bg-[var(--color-primary)]/8 border-b border-[var(--color-primary)]/20 px-4 py-2.5 text-center text-sm">
           <span className="text-[var(--color-text-muted)]">
@@ -216,14 +278,12 @@ export function DashboardClient() {
         </div>
       )}
 
-      {/* Upgrade success banner */}
       {upgraded && (
         <div className="bg-[var(--color-success)]/10 border-b border-[var(--color-success)]/30 px-4 py-2.5 text-center text-sm text-[var(--color-success)] font-medium">
           Your plan has been upgraded successfully. Welcome to the next level!
         </div>
       )}
 
-      {/* Credits added banner */}
       {creditsAdded && (
         <div className="bg-[var(--color-success)]/10 border-b border-[var(--color-success)]/30 px-4 py-2.5 text-center text-sm text-[var(--color-success)] font-medium">
           Credits added to your account. Keep closing!
@@ -233,22 +293,33 @@ export function DashboardClient() {
       <div className="flex-1 max-w-7xl mx-auto w-full px-4 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
-          {/* =====================================================
-              LEFT PANEL — FORM
-              ===================================================== */}
+          {/* ── LEFT PANEL — FORM ── */}
           <div className="space-y-5">
 
-            {/* Header */}
-            <div>
-              <h1 className="text-xl font-bold text-[var(--color-text)]">
-                Generate a response
-              </h1>
-              <p className="text-sm text-[var(--color-text-muted)] mt-0.5">
-                {session?.user?.name ? `Hi ${session.user.name.split(' ')[0]}.` : 'Hi.'} Choose an objection and get your POISE response.
-              </p>
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h1 className="text-xl font-bold text-[var(--color-text)]">Generate a response</h1>
+                <p className="text-sm text-[var(--color-text-muted)] mt-0.5">
+                  {session?.user?.name ? `Hi ${session.user.name.split(' ')[0]}.` : 'Hi.'} Choose an objection and get your POISE response.
+                </p>
+              </div>
+              <button
+                onClick={loadExample}
+                className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[var(--color-primary)]/40 text-xs font-semibold text-[var(--color-primary)] hover:bg-[var(--color-primary)]/10 transition-colors"
+              >
+                <PlayCircle className="w-3.5 h-3.5" />
+                Try an example
+              </button>
             </div>
 
-            {/* Step 1: Objection Type */}
+            {exampleLoaded && (
+              <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-[var(--color-primary)]/8 border border-[var(--color-primary)]/25 text-xs text-[var(--color-primary)]">
+                <Sparkles className="w-3.5 h-3.5 shrink-0" />
+                Example scenario loaded — click <strong className="mx-0.5">Generate</strong> to see POISE in action.
+              </div>
+            )}
+
+            {/* Step 1 */}
             <div className="card">
               <p className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wider mb-3">
                 Step 1 — Select the objection
@@ -260,10 +331,7 @@ export function DashboardClient() {
                   <span className="font-medium">{
                     OBJECTION_CATEGORIES.flatMap(c => c.objections).find(o => o.id === selectedObjection)?.label
                   }</span>
-                  <button
-                    onClick={() => setSelectedObjection('')}
-                    className="ml-auto text-[var(--color-text-muted)] hover:text-[var(--color-text)] text-xs"
-                  >
+                  <button onClick={() => setSelectedObjection('')} className="ml-auto text-[var(--color-text-muted)] hover:text-[var(--color-text)] text-xs">
                     Clear
                   </button>
                 </div>
@@ -283,7 +351,6 @@ export function DashboardClient() {
                         : <ChevronRight className="w-4 h-4 text-[var(--color-text-muted)]" />
                       }
                     </button>
-
                     {expandedCategory === cat.id && (
                       <div className="ml-3 mt-1 space-y-0.5 pb-1">
                         {cat.objections.map(obj => (
@@ -307,7 +374,7 @@ export function DashboardClient() {
               </div>
             </div>
 
-            {/* Step 2: Client message */}
+            {/* Step 2 */}
             <div className="card">
               <p className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wider mb-3">
                 Step 2 — Client&apos;s message (optional)
@@ -321,7 +388,7 @@ export function DashboardClient() {
               />
             </div>
 
-            {/* Step 3: Context */}
+            {/* Step 3 */}
             <div className="card">
               <p className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wider mb-3">
                 Step 3 — Context (optional)
@@ -341,37 +408,23 @@ export function DashboardClient() {
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="label" htmlFor="relationship">Relationship</label>
-                    <select
-                      id="relationship"
-                      className="input"
-                      value={relationshipLevel}
-                      onChange={e => setRelationshipLevel(e.target.value)}
-                    >
+                    <select id="relationship" className="input" value={relationshipLevel} onChange={e => setRelationshipLevel(e.target.value)}>
                       <option value="">Select...</option>
-                      {RELATIONSHIP_LEVELS.map(r => (
-                        <option key={r.id} value={r.id}>{r.label}</option>
-                      ))}
+                      {RELATIONSHIP_LEVELS.map(r => <option key={r.id} value={r.id}>{r.label}</option>)}
                     </select>
                   </div>
                   <div>
                     <label className="label" htmlFor="objective">Objective</label>
-                    <select
-                      id="objective"
-                      className="input"
-                      value={objective}
-                      onChange={e => setObjective(e.target.value)}
-                    >
+                    <select id="objective" className="input" value={objective} onChange={e => setObjective(e.target.value)}>
                       <option value="">Select...</option>
-                      {OBJECTIVES.map(o => (
-                        <option key={o.id} value={o.id}>{o.label}</option>
-                      ))}
+                      {OBJECTIVES.map(o => <option key={o.id} value={o.id}>{o.label}</option>)}
                     </select>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Step 4: Tone */}
+            {/* Step 4 */}
             <div className="card">
               <p className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wider mb-3">
                 Step 4 — Select your tone
@@ -397,7 +450,6 @@ export function DashboardClient() {
               </div>
             </div>
 
-            {/* Generate button */}
             {error && (
               <div className="flex items-center gap-2 p-3 rounded-lg bg-[var(--color-danger)]/10 border border-[var(--color-danger)]/30 text-[var(--color-danger)] text-sm">
                 <AlertCircle className="w-4 h-4 flex-shrink-0" />
@@ -406,51 +458,55 @@ export function DashboardClient() {
             )}
 
             <button
-              onClick={handleGenerate}
+              onClick={() => handleGenerate()}
               disabled={isGenerating || noCredits || !selectedObjection}
               className="btn-primary w-full py-3 text-base"
             >
               {isGenerating ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  Generating...
-                </>
+                <><Loader2 className="w-4 h-4 animate-spin" />Generating...</>
               ) : (
-                <>
-                  <Sparkles className="w-4 h-4" />
-                  Generate POISE Response
-                  {user && <span className="ml-auto text-xs opacity-70">{user.creditsLeft} left</span>}
-                </>
+                <><Sparkles className="w-4 h-4" />Generate POISE Response{user && <span className="ml-auto text-xs opacity-70">{user.creditsLeft} left</span>}</>
               )}
             </button>
 
-            {/* Buy more credits CTA */}
             {user && user.creditsLeft <= 3 && (
               <button
                 onClick={() => setShowCreditsModal(true)}
                 className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg border border-[var(--color-border)] text-sm font-semibold text-[var(--color-text-muted)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] transition-colors"
               >
                 <Plus className="w-4 h-4" />
-                {user.creditsLeft === 0 ? 'Buy credits to continue' : `Running low — buy more credits`}
+                {user.creditsLeft === 0 ? 'Buy credits to continue' : 'Running low — buy more credits'}
               </button>
             )}
 
             {user?.stripeCustomerId && (
-              <button
-                onClick={handleBillingPortal}
-                className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text)] underline underline-offset-2 w-full text-center"
-              >
+              <button onClick={handleBillingPortal} className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text)] underline underline-offset-2 w-full text-center">
                 Manage billing
               </button>
             )}
           </div>
 
-          {/* =====================================================
-              RIGHT PANEL — OUTPUT + HISTORY
-              ===================================================== */}
+          {/* ── RIGHT PANEL — OUTPUT + STATS + HISTORY ── */}
           <div className="space-y-5">
 
-            {/* Generated output */}
+            {/* Stats bar */}
+            {history.length > 0 && (
+              <div className="flex items-center gap-4 px-4 py-2.5 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)]">
+                <TrendingUp className="w-4 h-4 text-[var(--color-primary)] shrink-0" />
+                <div className="flex items-center gap-3 text-xs text-[var(--color-text-muted)] divide-x divide-[var(--color-border)]">
+                  <span>
+                    <strong className="text-[var(--color-text)]">{history.length}</strong> objection{history.length !== 1 ? 's' : ''} handled
+                  </span>
+                  {thisMonthCount > 0 && (
+                    <span className="pl-3">
+                      <strong className="text-[var(--color-success)]">{thisMonthCount}</strong> this month
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Output card */}
             <div className="card min-h-[300px] flex flex-col">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
@@ -483,8 +539,57 @@ export function DashboardClient() {
                   <p className="text-sm">Crafting your POISE response...</p>
                 </div>
               ) : generatedReply ? (
-                <div className="flex-1 text-sm text-[var(--color-text)] leading-relaxed whitespace-pre-wrap">
-                  {generatedReply}
+                <div className="flex-1 flex flex-col gap-3">
+                  {poiseSteps ? (
+                    // ── POISE step view ──
+                    poiseSteps.map(step => {
+                      const meta = POISE_META[step.key]
+                      return (
+                        <div
+                          key={step.key}
+                          className="rounded-lg p-3"
+                          style={{ background: meta.bg, border: `1px solid ${meta.color}30` }}
+                        >
+                          <div className="flex items-center gap-2 mb-1.5">
+                            <span
+                              className="w-5 h-5 rounded flex items-center justify-center text-[10px] font-bold text-white shrink-0"
+                              style={{ background: meta.color }}
+                            >
+                              {step.key}
+                            </span>
+                            <span className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: meta.color }}>
+                              {meta.label}
+                            </span>
+                          </div>
+                          <p className="text-sm text-[var(--color-text)] leading-relaxed">{step.text}</p>
+                        </div>
+                      )
+                    })
+                  ) : (
+                    // ── Fallback: plain text ──
+                    <div className="flex-1 text-sm text-[var(--color-text)] leading-relaxed whitespace-pre-wrap">
+                      {generatedReply}
+                    </div>
+                  )}
+
+                  {/* Regenerate with different tone */}
+                  {!noCredits && (
+                    <div className="mt-2 pt-3 border-t border-[var(--color-border)]">
+                      <p className="text-xs text-[var(--color-text-muted)] mb-2">Try a different tone <span className="opacity-60">(-1 credit each)</span>:</p>
+                      <div className="flex flex-wrap gap-2">
+                        {otherTones.map(t => (
+                          <button
+                            key={t.id}
+                            onClick={() => handleRegenerateWithTone(t.id)}
+                            disabled={isGenerating}
+                            className="px-3 py-1.5 rounded-lg text-xs font-medium border border-[var(--color-border)] text-[var(--color-text-muted)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] transition-colors disabled:opacity-40"
+                          >
+                            {t.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="flex-1 flex flex-col items-center justify-center gap-2 text-center">
@@ -492,9 +597,16 @@ export function DashboardClient() {
                     <Sparkles className="w-5 h-5 text-[var(--color-primary)]" />
                   </div>
                   <p className="text-sm font-medium text-[var(--color-text)]">Your response will appear here</p>
-                  <p className="text-xs text-[var(--color-text-muted)]">
+                  <p className="text-xs text-[var(--color-text-muted)] mb-3">
                     Select an objection type and click Generate
                   </p>
+                  <button
+                    onClick={loadExample}
+                    className="flex items-center gap-1.5 px-4 py-2 rounded-lg border border-[var(--color-primary)]/40 text-sm font-semibold text-[var(--color-primary)] hover:bg-[var(--color-primary)]/10 transition-colors"
+                  >
+                    <PlayCircle className="w-4 h-4" />
+                    Try an example
+                  </button>
                 </div>
               )}
             </div>
@@ -543,13 +655,9 @@ export function DashboardClient() {
           onClick={e => { if (e.target === e.currentTarget) setShowCreditsModal(false) }}
         >
           <div className="card w-full max-w-md relative">
-            <button
-              onClick={() => setShowCreditsModal(false)}
-              className="absolute top-4 right-4 text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors"
-            >
+            <button onClick={() => setShowCreditsModal(false)} className="absolute top-4 right-4 text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors">
               <X className="w-5 h-5" />
             </button>
-
             <div className="mb-6">
               <h2 className="text-lg font-bold text-[var(--color-text)]">Top up your credits</h2>
               <p className="text-sm text-[var(--color-text-muted)] mt-1">
@@ -557,15 +665,12 @@ export function DashboardClient() {
                 <span className="font-semibold text-[var(--color-text)]">{user?.creditsLeft ?? 0}</span> left.
               </p>
             </div>
-
             <div className="space-y-3">
               {CREDIT_PACKS.map(pack => (
                 <div
                   key={pack.id}
                   className={`relative flex items-center justify-between p-4 rounded-xl border transition-colors ${
-                    pack.badge
-                      ? 'border-[var(--color-primary)] bg-[var(--color-primary)]/5'
-                      : 'border-[var(--color-border)] hover:border-[var(--color-primary)]/50'
+                    pack.badge ? 'border-[var(--color-primary)] bg-[var(--color-primary)]/5' : 'border-[var(--color-border)] hover:border-[var(--color-primary)]/50'
                   }`}
                 >
                   {pack.badge && (
@@ -573,37 +678,24 @@ export function DashboardClient() {
                       {pack.badge}
                     </span>
                   )}
-
                   <div>
                     <p className="font-semibold text-[var(--color-text)] text-sm">{pack.name}</p>
-                    <p className="text-xs text-[var(--color-text-muted)] mt-0.5">
-                      {pack.credits} credits · ${pack.perCredit}/credit
-                    </p>
+                    <p className="text-xs text-[var(--color-text-muted)] mt-0.5">{pack.credits} credits · ${pack.perCredit}/credit</p>
                     <p className="text-xs text-[var(--color-primary)] mt-0.5">{pack.anchor}</p>
                   </div>
-
                   <button
                     onClick={() => handleBuyCredits(pack.priceId, pack.id)}
                     disabled={buyingPack === pack.id}
                     className={`ml-4 px-4 py-2 rounded-lg text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
-                      pack.badge
-                        ? 'bg-[var(--color-primary)] text-white hover:bg-[var(--color-primary-dark)]'
-                        : 'border border-[var(--color-border)] text-[var(--color-text)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]'
+                      pack.badge ? 'bg-[var(--color-primary)] text-white hover:bg-[var(--color-primary-dark)]' : 'border border-[var(--color-border)] text-[var(--color-text)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]'
                     }`}
                   >
-                    {buyingPack === pack.id ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      `$${pack.price}`
-                    )}
+                    {buyingPack === pack.id ? <Loader2 className="w-4 h-4 animate-spin" /> : `$${pack.price}`}
                   </button>
                 </div>
               ))}
             </div>
-
-            <p className="text-xs text-[var(--color-text-muted)] text-center mt-4">
-              Secure checkout via Stripe. Instant delivery.
-            </p>
+            <p className="text-xs text-[var(--color-text-muted)] text-center mt-4">Secure checkout via Stripe. Instant delivery.</p>
           </div>
         </div>
       )}
