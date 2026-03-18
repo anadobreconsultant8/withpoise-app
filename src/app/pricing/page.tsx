@@ -15,12 +15,18 @@ export default function PricingPage() {
   const router = useRouter()
   const [loading, setLoading] = useState<string | null>(null)
   const [userPlan, setUserPlan] = useState<string | null>(null)
+  const [creditsLeft, setCreditsLeft] = useState<number>(0)
 
   useEffect(() => {
     if (session) {
       fetch('/api/user')
         .then(r => r.ok ? r.json() : null)
-        .then(data => { if (data) setUserPlan(data.plan) })
+        .then(data => {
+          if (data) {
+            setUserPlan(data.plan)
+            setCreditsLeft(data.creditsLeft)
+          }
+        })
     }
   }, [session])
 
@@ -53,9 +59,14 @@ export default function PricingPage() {
     { key: 'elite', ...PLANS.elite, popular: false },
   ]
 
+  const freeCreditsLocked = userPlan === 'free' && creditsLeft > 0
+
   function getButtonState(planKey: string) {
     if (!session) return { label: 'Get Started', action: true, style: 'default' }
-    if (!userPlan || userPlan === 'free') return { label: 'Upgrade', action: true, style: 'default' }
+    if (!userPlan || userPlan === 'free') {
+      if (freeCreditsLocked) return { label: 'Use free credits first', action: false, style: 'locked' }
+      return { label: 'Upgrade', action: true, style: 'default' }
+    }
     if (userPlan === planKey) return { label: 'Current Plan', action: false, style: 'current' }
     const userIdx = PLAN_ORDER.indexOf(userPlan as typeof PLAN_ORDER[number])
     const planIdx = PLAN_ORDER.indexOf(planKey as typeof PLAN_ORDER[number])
@@ -130,7 +141,11 @@ export default function PricingPage() {
                   ))}
                 </ul>
 
-                {btn.action ? (
+                {btn.style === 'locked' ? (
+                  <div className="w-full py-2.5 rounded-lg text-sm font-semibold text-center bg-[var(--color-border)]/40 text-[var(--color-text-muted)] border border-[var(--color-border)] cursor-not-allowed">
+                    Use your 5 free credits first
+                  </div>
+                ) : btn.action ? (
                   <button
                     onClick={() => handleCheckout(plan.priceId, plan.key)}
                     disabled={loading === plan.key}

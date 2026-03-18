@@ -67,7 +67,7 @@ export function RegisterClient() {
       const res = await fetch('/api/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, password }),
+        body: JSON.stringify({ name, email, password, plan: selectedPlan }),
       })
 
       const data = await res.json()

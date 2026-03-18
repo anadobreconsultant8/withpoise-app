@@ -60,6 +60,10 @@ export async function sendWelcomeEmail(email: string, name?: string | null) {
           <li>Get a ready-to-send POISE response in seconds</li>
         </ul>
 
+        <p style="color: #9895ad; font-size: 13px; line-height: 1.6; margin-bottom: 28px; padding: 12px 16px; background: #1e1b2e; border: 1px solid #3d3857; border-radius: 8px;">
+          <strong style="color: #e2e0f0;">Good to know:</strong> once you use all 5 free responses, you'll be able to upgrade to a paid plan and get 30–300 responses/month.
+        </p>
+
         <a href="${dashboardUrl}" style="display: inline-block; padding: 12px 28px; background: #6366f1; color: white; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 15px;">
           Generate your first response →
         </a>

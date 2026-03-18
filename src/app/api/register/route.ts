@@ -10,7 +10,8 @@ export async function POST(req: NextRequest) {
     const limited = await applyRateLimit(registerLimiter, `register:${ip}`)
     if (limited) return limited
 
-    const { name, email, password } = await req.json()
+    const { name, email, password, plan } = await req.json()
+    const isPaidPlan = ['starter', 'pro', 'elite'].includes(plan)
 
     if (!email || !password) {
       return NextResponse.json({ error: 'Email and password are required' }, { status: 400 })
@@ -42,8 +43,8 @@ export async function POST(req: NextRequest) {
         email,
         passwordHash,
         plan: 'free',
-        creditsLeft: 5,
-        creditsTotal: 5,
+        creditsLeft: isPaidPlan ? 0 : 5,
+        creditsTotal: isPaidPlan ? 0 : 5,
       },
       select: { id: true, name: true, email: true, plan: true, creditsLeft: true },
     })

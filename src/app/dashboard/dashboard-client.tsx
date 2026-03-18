@@ -299,10 +299,10 @@ export function DashboardClient() {
           <span className="text-[var(--color-text-muted)]">
             You&apos;re on the free trial —{' '}
             <span className="text-[var(--color-text)] font-medium">{user.creditsLeft} credit{user.creditsLeft !== 1 ? 's' : ''} left.</span>
-            {' '}
+            {' '}Use all 5 credits to unlock upgrade.{' '}
           </span>
           <a href="/pricing" className="text-[var(--color-primary)] font-semibold hover:underline">
-            Upgrade to get 30–300 responses/month →
+            View plans →
           </a>
         </div>
       )}
