@@ -17,14 +17,29 @@ export async function POST(req: NextRequest) {
 
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
-      select: { id: true, email: true, name: true, stripeCustomerId: true },
+      select: { id: true, email: true, name: true, stripeCustomerId: true, stripeSubscriptionId: true },
     })
 
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
-    // Get or create Stripe customer
+    const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000'
+
+    // ── User already has an active subscription → update it directly ──
+    if (user.stripeSubscriptionId) {
+      const subscription = await stripe.subscriptions.retrieve(user.stripeSubscriptionId)
+      const itemId = subscription.items.data[0].id
+
+      await stripe.subscriptions.update(user.stripeSubscriptionId, {
+        items: [{ id: itemId, price: priceId }],
+        proration_behavior: 'create_prorations',
+      })
+
+      return NextResponse.json({ url: `${baseUrl}/dashboard?upgraded=true&creditsAdded=1` })
+    }
+
+    // ── No subscription yet → create Stripe customer if needed + checkout session ──
     let customerId = user.stripeCustomerId
     if (!customerId) {
       const customer = await stripe.customers.create({
@@ -38,8 +53,6 @@ export async function POST(req: NextRequest) {
         data: { stripeCustomerId: customerId },
       })
     }
-
-    const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000'
 
     const checkoutSession = await stripe.checkout.sessions.create({
       customer: customerId,
