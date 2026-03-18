@@ -223,6 +223,11 @@ export function DashboardClient() {
   }
 
   const noCredits = user ? user.creditsLeft <= 0 : false
+  const isPaidUser = user ? ['starter', 'pro', 'elite'].includes(user.plan) : false
+  // Running low: paid users at ≤20% of monthly credits (min threshold 3)
+  const runningLow = isPaidUser && user
+    ? user.creditsLeft > 0 && user.creditsLeft <= Math.max(3, Math.floor(user.creditsTotal * 0.2))
+    : false
 
   // Stats
   const now = new Date()
@@ -263,8 +268,34 @@ export function DashboardClient() {
       {noCredits && (
         <div className="bg-[var(--color-accent)]/10 border-b border-[var(--color-accent)]/30 px-4 py-2.5 text-center text-sm">
           <span className="text-[var(--color-accent)] font-medium">You&apos;re out of credits.</span>{' '}
-          <a href="/pricing" className="text-[var(--color-accent)] underline font-semibold">Upgrade now</a>
-          {' '}to keep generating responses.
+          {isPaidUser ? (
+            <>
+              <button onClick={() => setShowCreditsModal(true)} className="text-[var(--color-accent)] underline font-semibold">Buy a credit pack</button>
+              {' '}to top up instantly, or{' '}
+              <a href="/pricing" className="text-[var(--color-accent)] underline font-semibold">upgrade your plan</a>
+              {' '}for more monthly credits.
+            </>
+          ) : (
+            <>
+              <a href="/pricing" className="text-[var(--color-accent)] underline font-semibold">Upgrade now</a>
+              {' '}to keep generating responses.
+            </>
+          )}
+        </div>
+      )}
+
+      {runningLow && !noCredits && (
+        <div className="bg-[var(--color-accent)]/8 border-b border-[var(--color-accent)]/25 px-4 py-2.5 text-center text-sm">
+          <span className="text-[var(--color-text-muted)]">
+            Running low —{' '}
+            <span className="text-[var(--color-accent)] font-medium">{user!.creditsLeft} credit{user!.creditsLeft !== 1 ? 's' : ''} left</span>
+            {' '}this month.{' '}
+          </span>
+          <button onClick={() => setShowCreditsModal(true)} className="text-[var(--color-accent)] font-semibold hover:underline">
+            Top up instantly →
+          </button>
+          <span className="text-[var(--color-text-muted)]"> or </span>
+          <a href="/pricing" className="text-[var(--color-accent)] font-semibold hover:underline">upgrade your plan</a>
         </div>
       )}
 
@@ -459,13 +490,13 @@ export function DashboardClient() {
               )}
             </button>
 
-            {user && user.creditsLeft <= 3 && (
+            {(noCredits || runningLow) && isPaidUser && (
               <button
                 onClick={() => setShowCreditsModal(true)}
                 className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg border border-[var(--color-border)] text-sm font-semibold text-[var(--color-text-muted)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] transition-colors"
               >
                 <Plus className="w-4 h-4" />
-                {user.creditsLeft === 0 ? 'Buy credits to continue' : 'Running low — buy more credits'}
+                {noCredits ? 'Buy credits to continue' : `Running low (${user!.creditsLeft} left) — top up`}
               </button>
             )}
 
