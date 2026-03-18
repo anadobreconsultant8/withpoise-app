@@ -87,7 +87,7 @@ export default function PricingPage() {
             Simple, transparent pricing
           </h1>
           <p className="text-lg text-[var(--color-text-muted)] max-w-xl mx-auto">
-            Start free with 5 responses. Upgrade when you need more firepower.
+            {session ? 'Upgrade when you need more firepower.' : 'Start free with 5 responses. Upgrade when you need more firepower.'}
           </p>
         </div>
 
