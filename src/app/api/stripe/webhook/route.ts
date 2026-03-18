@@ -67,11 +67,19 @@ export async function POST(req: NextRequest) {
 
         const credits = getCreditsForPlan(planName)
 
+        // Carry over any unused free credits
+        const existing = await prisma.user.findUnique({
+          where: { stripeCustomerId: customerId },
+          select: { creditsLeft: true, plan: true },
+        })
+        const carryOver = existing?.plan === 'free' ? (existing.creditsLeft ?? 0) : 0
+        const creditsLeft = credits + carryOver
+
         const newUser = await prisma.user.update({
           where: { stripeCustomerId: customerId },
           data: {
             plan: planName,
-            creditsLeft: credits,
+            creditsLeft,
             creditsTotal: credits,
             stripeSubscriptionId: subscriptionId,
             stripePriceId: priceId,

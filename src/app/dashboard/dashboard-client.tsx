@@ -139,7 +139,7 @@ export function DashboardClient() {
           subscribeFired.current = true
         }
       }
-      if (data.creditsTotal > 5 || data.creditsLeft > 5 || attempts >= 10) clearInterval(poll)
+      if (data.plan !== 'free' || data.creditsTotal > 5 || data.creditsLeft > 5 || attempts >= 10) clearInterval(poll)
     }, 1000)
     return () => clearInterval(poll)
   }, [upgraded, creditsAdded])
@@ -280,7 +280,7 @@ export function DashboardClient() {
         </div>
       )}
 
-      {user && user.plan === 'free' && !noCredits && (
+      {user && user.plan === 'free' && !noCredits && !upgraded && (
         <div className="bg-[var(--color-primary)]/8 border-b border-[var(--color-primary)]/20 px-4 py-2.5 text-center text-sm">
           <span className="text-[var(--color-text-muted)]">
             You&apos;re on the free trial —{' '}
