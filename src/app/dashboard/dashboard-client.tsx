@@ -88,6 +88,7 @@ export function DashboardClient() {
   // Credits modal
   const [showCreditsModal, setShowCreditsModal] = useState(false)
   const [buyingPack, setBuyingPack] = useState<string | null>(null)
+  const [creditsModalError, setCreditsModalError] = useState<string | null>(null)
 
   const fetchUser = useCallback(async () => {
     const res = await fetch('/api/user')
@@ -239,7 +240,12 @@ export function DashboardClient() {
   const otherTones = TONES.filter(t => t.id !== tone)
 
   async function handleBuyCredits(priceId: string, packId: string) {
+    if (!priceId) {
+      setCreditsModalError('This pack is not available yet. Please contact support.')
+      return
+    }
     setBuyingPack(packId)
+    setCreditsModalError(null)
     try {
       const res = await fetch('/api/stripe/credits', {
         method: 'POST',
@@ -247,9 +253,14 @@ export function DashboardClient() {
         body: JSON.stringify({ priceId }),
       })
       const data = await res.json()
-      if (data.url) window.location.href = data.url
+      if (data.url) {
+        window.location.href = data.url
+      } else {
+        setCreditsModalError(data.error || 'Something went wrong. Please try again.')
+      }
     } catch (err) {
       console.error(err)
+      setCreditsModalError('Something went wrong. Please try again.')
     } finally {
       setBuyingPack(null)
     }
@@ -666,10 +677,10 @@ export function DashboardClient() {
       {showCreditsModal && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
-          onClick={e => { if (e.target === e.currentTarget) setShowCreditsModal(false) }}
+          onClick={e => { if (e.target === e.currentTarget) { setShowCreditsModal(false); setCreditsModalError(null) } }}
         >
           <div className="card w-full max-w-md relative">
-            <button onClick={() => setShowCreditsModal(false)} className="absolute top-4 right-4 text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors">
+            <button onClick={() => { setShowCreditsModal(false); setCreditsModalError(null) }} className="absolute top-4 right-4 text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors">
               <X className="w-5 h-5" />
             </button>
             <div className="mb-6">
@@ -679,6 +690,12 @@ export function DashboardClient() {
                 <span className="font-semibold text-[var(--color-text)]">{user?.creditsLeft ?? 0}</span> left.
               </p>
             </div>
+            {creditsModalError && (
+              <div className="mb-4 flex items-center gap-2 p-3 rounded-lg bg-[var(--color-danger)]/10 border border-[var(--color-danger)]/30 text-[var(--color-danger)] text-sm">
+                <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                {creditsModalError}
+              </div>
+            )}
             <div className="space-y-3">
               {CREDIT_PACKS.map(pack => (
                 <div
