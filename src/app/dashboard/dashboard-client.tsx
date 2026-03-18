@@ -59,15 +59,62 @@ function stripPoiseMarkers(text: string): string {
   return text.replace(/\[[POISE]\]\s*/g, '').trim()
 }
 
-const EXAMPLE_SCENARIO = {
-  objectionType: 'too_expensive',
-  categoryId: 'price_budget',
-  tone: 'balanced',
-  clientMessage: "We've compared a few proposals and honestly your price is significantly higher than the others we received. We really like your work but it's hard to justify this gap to our board.",
-  contractValue: '$18,000',
-  relationshipLevel: 'warm',
-  objective: 'close',
-}
+const EXAMPLE_SCENARIOS = [
+  {
+    objectionType: 'too_expensive',
+    categoryId: 'price_budget',
+    tone: 'balanced',
+    clientMessage: "We've compared a few proposals and honestly your price is significantly higher than the others we received. We really like your work but it's hard to justify this gap to our board.",
+    contractValue: '$18,000',
+    relationshipLevel: 'warm',
+    objective: 'close',
+    reply: `[P] I completely understand — when you're presenting to a board, every number gets scrutinised, and a higher price requires a compelling case. That pressure is real.
+
+[O] Before we compare on price, it's worth making sure we're comparing the same thing. Do the other proposals include the same scope, timeline, dedicated support, and revision rounds — or are there differences that explain part of the gap?
+
+[I] In our experience, proposals that come in lower are often scoped differently — fewer deliverables, longer timelines, or limited post-project support. Our price includes full ownership, direct access to our team throughout, and a clear accountability structure — which directly reduces the risk your board is taking on.
+
+[S] I'm not in a position to match a lower price for the same scope — our pricing reflects the quality and reliability we stand behind. What I can do is help you build the ROI case so the investment is easy to approve internally.
+
+[E] Would it help if I put together a one-page value summary outlining the expected ROI and what your board would actually be approving? I can have it to you by end of day — would that be useful?`,
+  },
+  {
+    objectionType: 'need_to_think',
+    categoryId: 'stalling',
+    tone: 'diplomatic',
+    clientMessage: "This looks interesting but we need some more time to think it over. We have a few things going on internally right now.",
+    contractValue: '$12,000',
+    relationshipLevel: 'neutral',
+    objective: 'next_step',
+    reply: `[P] Of course — this is a real commitment and it makes complete sense to think it through carefully. I appreciate you being straightforward with me about where you are.
+
+[O] I want to make sure you have everything you need to make the right call. When you say you need more time, is there a specific concern or open question that's holding things back? Sometimes "I need to think" really means "I need one more piece of information."
+
+[I] Most clients who paused at this stage told me later that what held them back was uncertainty around [timeline or internal alignment] — and once we addressed it directly, the decision became straightforward. I'd hate for something I could easily clarify to be the reason this stalls.
+
+[S] I won't push you to decide before you're ready — that's not how I work. What I do want to flag is that our availability for a start date like yours is limited, and I'd rather you know that now than find out after you've made your decision.
+
+[E] What would need to be true for you to feel confident making a decision by end of this week? Let's address that right now — even if it's a five-minute call.`,
+  },
+  {
+    objectionType: 'competitor_cheaper',
+    categoryId: 'price_budget',
+    tone: 'assertive',
+    clientMessage: "We've spoken to another agency and they can do the same thing for about 40% less. Can you match their price or get closer to it?",
+    contractValue: '$25,000',
+    relationshipLevel: 'cold',
+    objective: 'close',
+    reply: `[P] I appreciate you being direct — that's exactly the kind of transparency that makes a conversation productive. A 40% gap is significant and it deserves a real answer, not a deflection.
+
+[O] The honest question is whether it's the same thing. Scope, quality, accountability, and what happens when something goes wrong — these aren't always visible in a proposal. What specifically is included in their offer in terms of revisions, timeline guarantees, and post-delivery support?
+
+[I] We've won work back from clients who went with lower-cost alternatives — not because we were cheaper the second time, but because the first time cost them more in delays, rework, and internal time than the original saving. Our price reflects a delivery model that removes that risk entirely.
+
+[S] Price-matching isn't something we do — not because we're inflexible, but because our offer genuinely isn't the same offer. Lowering our price would mean lowering our standards, and that doesn't serve you.
+
+[E] I'd suggest we do a 15-minute side-by-side comparison of the two proposals before you make a final call. I'll show you exactly where the difference lies — and then the decision is yours with full information. Are you available tomorrow morning?`,
+  },
+]
 
 export function DashboardClient() {
   const { data: session } = useSession()
@@ -91,6 +138,10 @@ export function DashboardClient() {
   const [error, setError] = useState('')
   const [copied, setCopied] = useState(false)
   const [exampleLoaded, setExampleLoaded] = useState(false)
+  const [exampleCount, setExampleCount] = useState<number>(() => {
+    if (typeof window === 'undefined') return 0
+    return parseInt(localStorage.getItem('wp_example_count') ?? '0', 10)
+  })
 
   // History
   const [history, setHistory] = useState<HistoryItem[]>([])
@@ -159,17 +210,22 @@ export function DashboardClient() {
   }, [upgraded, creditsAdded])
 
   function loadExample() {
-    setSelectedObjection(EXAMPLE_SCENARIO.objectionType)
-    setExpandedCategory(EXAMPLE_SCENARIO.categoryId)
-    setTone(EXAMPLE_SCENARIO.tone)
-    setClientMessage(EXAMPLE_SCENARIO.clientMessage)
-    setContractValue(EXAMPLE_SCENARIO.contractValue)
-    setRelationshipLevel(EXAMPLE_SCENARIO.relationshipLevel)
-    setObjective(EXAMPLE_SCENARIO.objective)
-    setGeneratedReply('')
-    setPoiseSteps(null)
+    if (exampleCount >= 3) return
+    const scenario = EXAMPLE_SCENARIOS[exampleCount]
+    setSelectedObjection(scenario.objectionType)
+    setExpandedCategory(scenario.categoryId)
+    setTone(scenario.tone)
+    setClientMessage(scenario.clientMessage)
+    setContractValue(scenario.contractValue)
+    setRelationshipLevel(scenario.relationshipLevel)
+    setObjective(scenario.objective)
+    setGeneratedReply(scenario.reply)
+    setPoiseSteps(parsePoiseSteps(scenario.reply))
     setError('')
     setExampleLoaded(true)
+    const next = exampleCount + 1
+    setExampleCount(next)
+    localStorage.setItem('wp_example_count', String(next))
   }
 
   async function handleGenerate(toneOverride?: string) {
@@ -332,19 +388,22 @@ export function DashboardClient() {
                   {session?.user?.name ? `Hi ${session.user.name.split(' ')[0]}.` : 'Hi.'} Choose an objection and get your POISE response.
                 </p>
               </div>
-              <button
-                onClick={loadExample}
-                className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[var(--color-primary)]/40 text-xs font-semibold text-[var(--color-primary)] hover:bg-[var(--color-primary)]/10 transition-colors"
-              >
-                <PlayCircle className="w-3.5 h-3.5" />
-                Try an example
-              </button>
+              {exampleCount < 3 && (
+                <button
+                  onClick={loadExample}
+                  className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[var(--color-primary)]/40 text-xs font-semibold text-[var(--color-primary)] hover:bg-[var(--color-primary)]/10 transition-colors"
+                >
+                  <PlayCircle className="w-3.5 h-3.5" />
+                  Try an example
+                  <span className="ml-0.5 opacity-50">{exampleCount + 1}/3</span>
+                </button>
+              )}
             </div>
 
             {exampleLoaded && (
               <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-[var(--color-primary)]/8 border border-[var(--color-primary)]/25 text-xs text-[var(--color-primary)]">
                 <Sparkles className="w-3.5 h-3.5 shrink-0" />
-                Example scenario loaded — click <strong className="mx-0.5">Generate</strong> to see POISE in action.
+                This is a sample response — no credit used. Try it on your own scenario to generate a real one.
               </div>
             )}
 
@@ -629,13 +688,16 @@ export function DashboardClient() {
                   <p className="text-xs text-[var(--color-text-muted)] mb-3">
                     Select an objection type and click Generate
                   </p>
-                  <button
-                    onClick={loadExample}
-                    className="flex items-center gap-1.5 px-4 py-2 rounded-lg border border-[var(--color-primary)]/40 text-sm font-semibold text-[var(--color-primary)] hover:bg-[var(--color-primary)]/10 transition-colors"
-                  >
-                    <PlayCircle className="w-4 h-4" />
-                    Try an example
-                  </button>
+                  {exampleCount < 3 && (
+                    <button
+                      onClick={loadExample}
+                      className="flex items-center gap-1.5 px-4 py-2 rounded-lg border border-[var(--color-primary)]/40 text-sm font-semibold text-[var(--color-primary)] hover:bg-[var(--color-primary)]/10 transition-colors"
+                    >
+                      <PlayCircle className="w-4 h-4" />
+                      Try an example
+                      <span className="ml-0.5 opacity-50 text-xs">{exampleCount + 1}/3</span>
+                    </button>
+                  )}
                 </div>
               )}
             </div>
