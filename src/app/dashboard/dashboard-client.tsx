@@ -120,14 +120,24 @@ export function DashboardClient() {
   useEffect(() => {
     if (!upgraded && !creditsAdded) return
     let attempts = 0
+    let initialPlan: string | null = null
+    let initialCreditsTotal: number | null = null
     const poll = setInterval(async () => {
       attempts++
       const res = await fetch('/api/user')
       if (!res.ok) return
       const data = await res.json()
+
+      // Capture baseline on first poll
+      if (attempts === 1) {
+        initialPlan = data.plan
+        initialCreditsTotal = data.creditsTotal
+      }
+
       setUser(data)
-      // Fire Subscribe pixel event once when plan is confirmed
-      if (upgraded && !subscribeFired.current && data.plan && data.plan !== 'free') {
+
+      // Fire Subscribe pixel event once when plan change is confirmed
+      if (upgraded && !subscribeFired.current && data.plan && data.plan !== 'free' && data.plan !== initialPlan) {
         const planInfo = PLANS[data.plan as keyof typeof PLANS]
         if (planInfo) {
           pixelTrack('Subscribe', {
@@ -139,7 +149,11 @@ export function DashboardClient() {
           subscribeFired.current = true
         }
       }
-      if (data.plan !== 'free' || data.creditsTotal > 5 || data.creditsLeft > 5 || attempts >= 10) clearInterval(poll)
+
+      // Stop when plan or credits changed, or max attempts reached
+      const planChanged = initialPlan !== null && data.plan !== initialPlan
+      const creditsChanged = initialCreditsTotal !== null && data.creditsTotal !== initialCreditsTotal
+      if (planChanged || creditsChanged || attempts >= 10) clearInterval(poll)
     }, 1000)
     return () => clearInterval(poll)
   }, [upgraded, creditsAdded])
