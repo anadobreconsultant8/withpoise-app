@@ -1,3 +1,5 @@
+import { redirect } from 'next/navigation'
+import { auth } from '@/lib/auth'
 import Link from 'next/link'
 import { Zap, ArrowRight, Check, X, ChevronRight, Quote } from 'lucide-react'
 import { Navbar } from '@/components/navbar'
@@ -77,7 +79,10 @@ const FAQ_SCHEMA = {
   ],
 }
 
-export default function LandingPage() {
+export default async function LandingPage() {
+  const session = await auth()
+  if (session) redirect('/dashboard')
+
   return (
     <div className="min-h-screen">
       <Navbar />
