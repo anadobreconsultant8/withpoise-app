@@ -3,6 +3,8 @@ import { Navbar } from '@/components/navbar'
 
 export const metadata = {
   title: 'Terms of Service — withPOISE',
+  description: 'Read the withPOISE terms of service. Understand the conditions for using our AI-powered objection response platform.',
+  robots: { index: true, follow: true },
 }
 
 const LAST_UPDATED = 'March 10, 2026'

@@ -3,6 +3,8 @@ import { Navbar } from '@/components/navbar'
 
 export const metadata = {
   title: 'Privacy Policy — withPOISE',
+  description: 'Read the withPOISE privacy policy. Learn how we collect, use, and protect your personal data in compliance with GDPR.',
+  robots: { index: true, follow: true },
 }
 
 const LAST_UPDATED = 'March 10, 2026'

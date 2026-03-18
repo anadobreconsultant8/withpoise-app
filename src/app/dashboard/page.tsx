@@ -2,6 +2,11 @@ import { Suspense } from 'react'
 import { DashboardClient } from './dashboard-client'
 import { Loader2 } from 'lucide-react'
 
+export const metadata = {
+  title: 'Dashboard — withPOISE',
+  robots: { index: false, follow: false },
+}
+
 export default function DashboardPage() {
   return (
     <Suspense fallback={

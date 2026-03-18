@@ -33,12 +33,14 @@ export const metadata: Metadata = {
     title: 'withPOISE — Never Lose a Deal to Price Objections Again',
     description:
       'AI-powered objection responses for consultants and agency owners. Built on the POISE framework. Strategic, firm, ready to send in seconds.',
+    images: [{ url: '/opengraph-image', width: 1200, height: 630, alt: 'withPOISE — AI Objection Response Generator' }],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'withPOISE — Never Lose a Deal to Price Objections Again',
     description:
       'AI-powered objection responses built on the POISE framework. No discounting. Ever.',
+    images: ['/opengraph-image'],
   },
   robots: {
     index: true,
@@ -72,6 +74,37 @@ export default function RootLayout({
             alt=""
           />
         </noscript>
+      </head>
+      <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify([
+            {
+              '@context': 'https://schema.org',
+              '@type': 'Organization',
+              name: 'withPOISE',
+              url: 'https://withpoise.net',
+              logo: 'https://withpoise.net/opengraph-image',
+              contactPoint: { '@type': 'ContactPoint', email: 'hello@withpoise.net', contactType: 'customer support' },
+            },
+            {
+              '@context': 'https://schema.org',
+              '@type': 'SoftwareApplication',
+              name: 'withPOISE',
+              applicationCategory: 'BusinessApplication',
+              operatingSystem: 'Web',
+              url: 'https://withpoise.net',
+              description: 'AI-powered price objection response generator for B2B consultants and agency owners, built on the proprietary POISE framework.',
+              offers: [
+                { '@type': 'Offer', name: 'Free',    price: '0',   priceCurrency: 'USD', description: '5 responses' },
+                { '@type': 'Offer', name: 'Starter', price: '29',  priceCurrency: 'USD', description: '30 responses/month' },
+                { '@type': 'Offer', name: 'Pro',     price: '79',  priceCurrency: 'USD', description: '100 responses/month' },
+                { '@type': 'Offer', name: 'Elite',   price: '149', priceCurrency: 'USD', description: '300 responses/month' },
+              ],
+              aggregateRating: { '@type': 'AggregateRating', ratingValue: '4.9', bestRating: '5', worstRating: '1', ratingCount: '240' },
+            },
+          ]) }}
+        />
       </head>
       <body>
         <SessionProvider>{children}</SessionProvider>

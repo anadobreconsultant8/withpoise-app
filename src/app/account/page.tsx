@@ -2,7 +2,7 @@ import { Suspense } from 'react'
 import { AccountClient } from './account-client'
 import { Loader2 } from 'lucide-react'
 
-export const metadata = { title: 'Account Settings — withPOISE' }
+export const metadata = { title: 'Account Settings — withPOISE', robots: { index: false, follow: false } }
 
 export default function AccountPage() {
   return (

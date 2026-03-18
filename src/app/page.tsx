@@ -64,6 +64,19 @@ My investment is what it is because of the results it produces. I'm not the chea
 
 I have one onboarding slot opening in the next two weeks. If you'd like to hold it, let's lock in your start date by Friday.`
 
+const FAQ_SCHEMA = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: [
+    { '@type': 'Question', name: 'What happens after I use my 5 free responses?', acceptedAnswer: { '@type': 'Answer', text: 'You can upgrade to any paid plan or buy a one-time credit pack. No automatic charges — you decide when and how to top up.' } },
+    { '@type': 'Question', name: 'Will it ever suggest a discount?', acceptedAnswer: { '@type': 'Answer', text: 'Never. The no-discount rule is hardcoded into the AI engine. Every response is built to hold your price, reframe value, and move the deal forward — without giving ground.' } },
+    { '@type': 'Question', name: 'Is this for freelancers or agencies too?', acceptedAnswer: { '@type': 'Answer', text: 'Both. withPOISE works for any consultant, coach, or agency owner who sells high-ticket services and deals with price objections on a regular basis.' } },
+    { '@type': 'Question', name: 'How is this different from asking ChatGPT?', acceptedAnswer: { '@type': 'Answer', text: 'ChatGPT is a generalist. It will often suggest "offering a payment plan" or "being flexible on scope." withPOISE is purpose-built on the POISE framework — it knows the strategy, knows the boundaries, and produces responses that protect your positioning every time.' } },
+    { '@type': 'Question', name: 'Can I cancel my subscription anytime?', acceptedAnswer: { '@type': 'Answer', text: 'Yes. Cancel from your billing portal with one click, no questions asked. Your credits remain active until the end of the billing period.' } },
+    { '@type': 'Question', name: 'Is my client data safe?', acceptedAnswer: { '@type': 'Answer', text: 'Yes. Messages you paste in are used only to generate your response and are never stored long-term or used for training.' } },
+  ],
+}
+
 export default function LandingPage() {
   return (
     <div className="min-h-screen">
@@ -349,6 +362,7 @@ export default function LandingPage() {
           <p>© {new Date().getFullYear()} withPOISE</p>
         </div>
       </footer>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(FAQ_SCHEMA) }} />
     </div>
   )
 }
