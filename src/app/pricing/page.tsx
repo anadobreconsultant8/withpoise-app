@@ -173,26 +173,21 @@ export default function PricingPage() {
           })}
         </div>
 
-        {/* Free plan note */}
-        <div className="mt-8 card flex items-center justify-between flex-wrap gap-4">
-          <div className="flex items-center gap-3">
-            <Zap className="w-5 h-5 text-[var(--color-primary)]" />
-            <div>
-              <p className="text-sm font-semibold text-[var(--color-text)]">
-                Free — 5 responses included
-                {session && (!userPlan || userPlan === 'free') && (
-                  <span className="ml-2 text-xs font-normal px-2 py-0.5 rounded-full bg-[var(--color-success)]/15 text-[var(--color-success)]">Your current plan</span>
-                )}
-              </p>
-              <p className="text-xs text-[var(--color-text-muted)]">No credit card required to get started</p>
+        {/* Free plan note — only for non-logged-in visitors */}
+        {!session && (
+          <div className="mt-8 card flex items-center justify-between flex-wrap gap-4">
+            <div className="flex items-center gap-3">
+              <Zap className="w-5 h-5 text-[var(--color-primary)]" />
+              <div>
+                <p className="text-sm font-semibold text-[var(--color-text)]">Free — 5 responses included</p>
+                <p className="text-xs text-[var(--color-text-muted)]">No credit card required to get started</p>
+              </div>
             </div>
-          </div>
-          {!session && (
             <Link href="/register" className="btn-secondary text-sm">
               Start for free
             </Link>
-          )}
-        </div>
+          </div>
+        )}
 
         {/* Manage billing */}
         {session && userPlan && userPlan !== 'free' && (
