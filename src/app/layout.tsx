@@ -46,6 +46,9 @@ export const metadata: Metadata = {
     index: true,
     follow: true,
   },
+  verification: {
+    google: 'google639b739a871f15e6',
+  },
 }
 
 export default function RootLayout({
@@ -56,6 +59,15 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
+        {/* Google Analytics 4 */}
+        <Script async src="https://www.googletagmanager.com/gtag/js?id=G-26W8C6S0L6" strategy="afterInteractive" />
+        <Script id="ga4" strategy="afterInteractive">{`
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+          gtag('config', 'G-26W8C6S0L6');
+        `}</Script>
+
         <Script id="meta-pixel" strategy="beforeInteractive">{`
           !function(f,b,e,v,n,t,s)
           {if(f.fbq)return;n=f.fbq=function(){n.callMethod?

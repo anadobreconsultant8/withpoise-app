@@ -353,6 +353,8 @@ export default function LandingPage() {
             </span>
           </div>
           <div className="flex items-center gap-6">
+            <Link href="/about" className="hover:text-[var(--color-text)] transition-colors">About</Link>
+            <Link href="/blog" className="hover:text-[var(--color-text)] transition-colors">Blog</Link>
             <Link href="/pricing" className="hover:text-[var(--color-text)] transition-colors">Pricing</Link>
             <Link href="/login" className="hover:text-[var(--color-text)] transition-colors">Sign in</Link>
             <a href="mailto:hello@withpoise.net" className="hover:text-[var(--color-text)] transition-colors">Support</a>
