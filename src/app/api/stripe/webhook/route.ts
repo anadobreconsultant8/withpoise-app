@@ -81,8 +81,8 @@ export async function POST(req: NextRequest) {
         })
 
         if (newUser.email && (planName === 'starter' || planName === 'pro' || planName === 'elite')) {
-          sendPaidWelcomeEmail(newUser.email, newUser.name, planName).catch(() => {})
-          sendAdminSubscriptionEventEmail('upgrade', newUser.email, newUser.name, 'free', planName).catch(() => {})
+          sendPaidWelcomeEmail(newUser.email, newUser.name, planName).catch(err => console.error('[webhook] email send failed:', err))
+          sendAdminSubscriptionEventEmail('upgrade', newUser.email, newUser.name, 'free', planName).catch(err => console.error('[webhook] email send failed:', err))
         }
         break
       }
@@ -150,10 +150,10 @@ export async function POST(req: NextRequest) {
 
         if (user.email && user.plan !== planName) {
           const eventType = creditDiff > 0 ? 'upgrade' : subscription.cancel_at_period_end ? 'cancel' : 'downgrade'
-          sendAdminSubscriptionEventEmail(eventType, user.email, user.name, user.plan, planName).catch(() => {})
+          sendAdminSubscriptionEventEmail(eventType, user.email, user.name, user.plan, planName).catch(err => console.error('[webhook] email send failed:', err))
         } else if (user.email && subscription.cancel_at_period_end !== (user.plan === planName)) {
           const eventType = subscription.cancel_at_period_end ? 'cancel' : 'cancel_resumed'
-          sendAdminSubscriptionEventEmail(eventType, user.email, user.name, user.plan, planName).catch(() => {})
+          sendAdminSubscriptionEventEmail(eventType, user.email, user.name, user.plan, planName).catch(err => console.error('[webhook] email send failed:', err))
         }
         break
       }
@@ -177,7 +177,7 @@ export async function POST(req: NextRequest) {
         })
 
         if (expiredUser.email) {
-          sendAdminSubscriptionEventEmail('expired', expiredUser.email, expiredUser.name, expiredUser.plan, 'free').catch(() => {})
+          sendAdminSubscriptionEventEmail('expired', expiredUser.email, expiredUser.name, expiredUser.plan, 'free').catch(err => console.error('[webhook] email send failed:', err))
         }
         break
       }

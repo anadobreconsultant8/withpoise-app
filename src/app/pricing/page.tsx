@@ -7,6 +7,7 @@ import Link from 'next/link'
 import { Zap, Check, Star, Loader2 } from 'lucide-react'
 import { Navbar } from '@/components/navbar'
 import { PLANS } from '@/lib/plans'
+import { pixelTrack } from '@/lib/meta-pixel'
 
 const PLAN_ORDER = ['starter', 'pro', 'elite'] as const
 
@@ -37,6 +38,7 @@ export default function PricingPage() {
     }
 
     setLoading(planKey)
+    pixelTrack('InitiateCheckout', { content_name: planKey })
     try {
       const res = await fetch('/api/stripe/checkout', {
         method: 'POST',

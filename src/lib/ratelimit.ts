@@ -32,6 +32,9 @@ export const forgotPasswordLimiter = createLimiter(3, '1 h')
 // 5 reset-password attempts per 15 minutes per IP
 export const resetPasswordLimiter = createLimiter(5, '15 m')
 
+// 3 data export requests per hour per user
+export const exportLimiter = createLimiter(3, '1 h')
+
 export async function applyRateLimit(
   limiter: Ratelimit | null,
   identifier: string,

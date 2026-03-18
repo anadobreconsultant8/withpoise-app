@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { exportLimiter, applyRateLimit } from '@/lib/ratelimit'
 
 export async function GET() {
   try {
@@ -8,6 +9,9 @@ export async function GET() {
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+
+    const limited = await applyRateLimit(exportLimiter, `export:${session.user.id}`)
+    if (limited) return limited
 
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
