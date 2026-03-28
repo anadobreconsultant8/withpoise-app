@@ -28,15 +28,31 @@ export async function POST(req: NextRequest) {
 
     // ── User already has an active subscription → update it directly ──
     if (user.stripeSubscriptionId) {
-      const subscription = await stripe.subscriptions.retrieve(user.stripeSubscriptionId)
-      const itemId = subscription.items.data[0].id
+      try {
+        const subscription = await stripe.subscriptions.retrieve(user.stripeSubscriptionId)
 
-      await stripe.subscriptions.update(user.stripeSubscriptionId, {
-        items: [{ id: itemId, price: priceId }],
-        proration_behavior: 'create_prorations',
-      })
+        // Only update if the subscription is still active
+        if (subscription.status === 'active' || subscription.status === 'trialing') {
+          const itemId = subscription.items.data[0].id
+          await stripe.subscriptions.update(user.stripeSubscriptionId, {
+            items: [{ id: itemId, price: priceId }],
+            proration_behavior: 'create_prorations',
+          })
+          return NextResponse.json({ url: `${baseUrl}/dashboard?upgraded=true&creditsAdded=1` })
+        }
 
-      return NextResponse.json({ url: `${baseUrl}/dashboard?upgraded=true&creditsAdded=1` })
+        // Subscription exists but is not active (cancelled, expired) — clear it and fall through
+        await prisma.user.update({
+          where: { id: user.id },
+          data: { stripeSubscriptionId: null, stripePriceId: null },
+        })
+      } catch {
+        // Subscription not found in Stripe (stale ID) — clear it and fall through to checkout
+        await prisma.user.update({
+          where: { id: user.id },
+          data: { stripeSubscriptionId: null, stripePriceId: null },
+        })
+      }
     }
 
     // ── No subscription yet → create Stripe customer if needed + checkout session ──
