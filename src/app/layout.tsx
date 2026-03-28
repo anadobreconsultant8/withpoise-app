@@ -111,7 +111,6 @@ export default function RootLayout({
                 { '@type': 'Offer', name: 'Pro',     price: '79',  priceCurrency: 'USD', description: '100 responses/month' },
                 { '@type': 'Offer', name: 'Elite',   price: '149', priceCurrency: 'USD', description: '300 responses/month' },
               ],
-              aggregateRating: { '@type': 'AggregateRating', ratingValue: '4.9', bestRating: '5', worstRating: '1', ratingCount: '240' },
             },
           ]) }}
         />
