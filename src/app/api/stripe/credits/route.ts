@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { stripe } from '@/lib/stripe'
-import { getCreditPackByPriceId } from '@/lib/plans'
 
 export async function POST(req: NextRequest) {
   try {
@@ -11,14 +10,20 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { priceId } = await req.json()
-    if (!priceId) {
-      return NextResponse.json({ error: 'priceId is required' }, { status: 400 })
+    const { packId } = await req.json()
+    if (!packId) {
+      return NextResponse.json({ error: 'packId is required' }, { status: 400 })
     }
 
-    const pack = getCreditPackByPriceId(priceId)
+    const { CREDIT_PACKS } = await import('@/lib/plans')
+    const pack = CREDIT_PACKS.find(p => p.id === packId)
     if (!pack) {
       return NextResponse.json({ error: 'Invalid credit pack' }, { status: 400 })
+    }
+
+    const priceId = pack.priceId
+    if (!priceId) {
+      return NextResponse.json({ error: 'Credit pack price not configured' }, { status: 500 })
     }
 
     const user = await prisma.user.findUnique({

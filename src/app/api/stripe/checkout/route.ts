@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { stripe } from '@/lib/stripe'
+import { PLANS } from '@/lib/plans'
 
 export async function POST(req: NextRequest) {
   try {
@@ -10,9 +11,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { priceId } = await req.json()
+    const { planKey } = await req.json()
+    if (!planKey || !(planKey in PLANS)) {
+      return NextResponse.json({ error: 'Invalid plan' }, { status: 400 })
+    }
+
+    const priceId = PLANS[planKey as keyof typeof PLANS].priceId
     if (!priceId) {
-      return NextResponse.json({ error: 'priceId is required' }, { status: 400 })
+      return NextResponse.json({ error: 'Plan price not configured' }, { status: 500 })
     }
 
     const user = await prisma.user.findUnique({

@@ -239,18 +239,14 @@ export function DashboardClient() {
 
   const otherTones = TONES.filter(t => t.id !== tone)
 
-  async function handleBuyCredits(priceId: string, packId: string) {
-    if (!priceId) {
-      setCreditsModalError('This pack is not available yet. Please contact support.')
-      return
-    }
+  async function handleBuyCredits(packId: string) {
     setBuyingPack(packId)
     setCreditsModalError(null)
     try {
       const res = await fetch('/api/stripe/credits', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ priceId }),
+        body: JSON.stringify({ packId }),
       })
       const data = await res.json()
       if (data.url) {
@@ -715,7 +711,7 @@ export function DashboardClient() {
                     <p className="text-xs text-[var(--color-primary)] mt-0.5">{pack.anchor}</p>
                   </div>
                   <button
-                    onClick={() => handleBuyCredits(pack.priceId, pack.id)}
+                    onClick={() => handleBuyCredits(pack.id)}
                     disabled={buyingPack === pack.id}
                     className={`ml-4 px-4 py-2 rounded-lg text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
                       pack.badge ? 'bg-[var(--color-primary)] text-white hover:bg-[var(--color-primary-dark)]' : 'border border-[var(--color-border)] text-[var(--color-text)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]'

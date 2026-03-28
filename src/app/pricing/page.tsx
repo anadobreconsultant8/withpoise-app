@@ -15,6 +15,7 @@ export default function PricingPage() {
   const { data: session } = useSession()
   const router = useRouter()
   const [loading, setLoading] = useState<string | null>(null)
+  const [checkoutError, setCheckoutError] = useState<string | null>(null)
   const [userPlan, setUserPlan] = useState<string | null>(null)
   const [creditsLeft, setCreditsLeft] = useState<number>(0)
 
@@ -31,25 +32,26 @@ export default function PricingPage() {
     }
   }, [session])
 
-  async function handleCheckout(priceId: string, planKey: string) {
+  async function handleCheckout(planKey: string) {
     if (!session) {
       router.push(`/register?plan=${planKey}`)
       return
     }
 
     setLoading(planKey)
+    setCheckoutError(null)
     pixelTrack('InitiateCheckout', { content_name: planKey })
     try {
       const res = await fetch('/api/stripe/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ priceId }),
+        body: JSON.stringify({ planKey }),
       })
       const data = await res.json()
       if (data.url) window.location.href = data.url
-      else console.error(data.error)
-    } catch (err) {
-      console.error(err)
+      else setCheckoutError(data.error || 'Something went wrong. Please try again.')
+    } catch {
+      setCheckoutError('Something went wrong. Please try again.')
     } finally {
       setLoading(null)
     }
@@ -149,7 +151,7 @@ export default function PricingPage() {
                   </div>
                 ) : btn.action ? (
                   <button
-                    onClick={() => handleCheckout(plan.priceId, plan.key)}
+                    onClick={() => handleCheckout(plan.key)}
                     disabled={loading === plan.key}
                     className={`w-full py-2.5 rounded-lg text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
                       btn.style === 'muted'
@@ -172,6 +174,13 @@ export default function PricingPage() {
             )
           })}
         </div>
+
+        {/* Checkout error */}
+        {checkoutError && (
+          <div className="mt-4 p-3 rounded-lg bg-[var(--color-danger)]/10 border border-[var(--color-danger)]/30 text-sm text-[var(--color-danger)] text-center">
+            {checkoutError}
+          </div>
+        )}
 
         {/* Free plan note — only for non-logged-in visitors */}
         {!session && (
