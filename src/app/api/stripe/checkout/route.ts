@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { stripe } from '@/lib/stripe'
+import { stripe, getOrCreateStripeCustomer } from '@/lib/stripe'
 import { PLANS } from '@/lib/plans'
 
 export async function POST(req: NextRequest) {
@@ -61,20 +61,8 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // ── No subscription yet → create Stripe customer if needed + checkout session ──
-    let customerId = user.stripeCustomerId
-    if (!customerId) {
-      const customer = await stripe.customers.create({
-        email: user.email,
-        name: user.name || undefined,
-        metadata: { userId: user.id },
-      })
-      customerId = customer.id
-      await prisma.user.update({
-        where: { id: user.id },
-        data: { stripeCustomerId: customerId },
-      })
-    }
+    // ── No subscription yet → get/create valid Stripe customer + checkout session ──
+    const customerId = await getOrCreateStripeCustomer(user)
 
     const checkoutSession = await stripe.checkout.sessions.create({
       customer: customerId,

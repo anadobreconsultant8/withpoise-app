@@ -206,6 +206,7 @@ export default function PricingPage() {
                 const res = await fetch('/api/stripe/portal', { method: 'POST' })
                 const data = await res.json()
                 if (data.url) window.location.href = data.url
+                else setCheckoutError(data.error || 'Could not open billing portal. Please try again.')
               }}
               className="text-sm text-[var(--color-text-muted)] hover:text-[var(--color-primary)] underline underline-offset-2 transition-colors"
             >
