@@ -44,11 +44,11 @@ export function RegisterClient() {
   const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
 
-  async function redirectToCheckout(priceId: string) {
+  async function redirectToCheckout(planKey: string) {
     const res = await fetch('/api/stripe/checkout', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ priceId }),
+      body: JSON.stringify({ planKey }),
     })
     const data = await res.json()
     if (data.url) {
@@ -92,8 +92,8 @@ export function RegisterClient() {
 
       pixelTrack('CompleteRegistration', { content_name: 'free' })
 
-      if (planData) {
-        await redirectToCheckout(planData.priceId)
+      if (selectedPlan) {
+        await redirectToCheckout(selectedPlan)
       } else {
         router.push('/dashboard')
       }

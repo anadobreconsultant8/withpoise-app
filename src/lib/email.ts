@@ -9,6 +9,15 @@ function getResend() {
   return new Resend(process.env.RESEND_API_KEY)
 }
 
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;')
+}
+
 function emailFooter(type: 'transactional' | 'commercial') {
   const unsubscribeLine = type === 'commercial'
     ? `<a href="${BASE_URL}/account" style="color: #6366f1;">Manage email preferences</a> · `
@@ -500,17 +509,19 @@ export async function sendAdminNewUserEmail(userEmail: string, userName: string 
   if (!resend) return
 
   const now = new Date().toLocaleString('en-GB', { timeZone: 'Europe/Bucharest', dateStyle: 'short', timeStyle: 'short' })
+  const safeEmail = escapeHtml(userEmail)
+  const safeName = userName ? escapeHtml(userName) : '—'
 
   await resend.emails.send({
     from: FROM,
     to: ADMIN_EMAIL,
-    subject: `🆕 New signup: ${userEmail}`,
+    subject: `🆕 New signup: ${safeEmail}`,
     html: `
       <div style="font-family: monospace; max-width: 480px; margin: 0 auto; padding: 32px 24px; background: #0f0d1a; color: #e2e0f0;">
         <p style="font-size: 18px; font-weight: 700; margin-bottom: 20px;">New user registered</p>
         <table style="width: 100%; border-collapse: collapse;">
-          <tr><td style="color: #9895ad; padding: 6px 0; width: 120px;">Email</td><td style="color: #e2e0f0;">${userEmail}</td></tr>
-          <tr><td style="color: #9895ad; padding: 6px 0;">Name</td><td style="color: #e2e0f0;">${userName || '—'}</td></tr>
+          <tr><td style="color: #9895ad; padding: 6px 0; width: 120px;">Email</td><td style="color: #e2e0f0;">${safeEmail}</td></tr>
+          <tr><td style="color: #9895ad; padding: 6px 0;">Name</td><td style="color: #e2e0f0;">${safeName}</td></tr>
           <tr><td style="color: #9895ad; padding: 6px 0;">Method</td><td style="color: #e2e0f0;">${method === 'google' ? '🔵 Google OAuth' : '📧 Email/Password'}</td></tr>
           <tr><td style="color: #9895ad; padding: 6px 0;">Plan</td><td style="color: #e2e0f0;">Free (5 credits)</td></tr>
           <tr><td style="color: #9895ad; padding: 6px 0;">Time</td><td style="color: #e2e0f0;">${now} (RO)</td></tr>
@@ -548,16 +559,19 @@ export async function sendAdminSubscriptionEventEmail(
     expired: 'Subscription expired',
   }
 
+  const safeEmail2 = escapeHtml(userEmail)
+  const safeName2 = userName ? escapeHtml(userName) : '—'
+
   await resend.emails.send({
     from: FROM,
     to: ADMIN_EMAIL,
-    subject: `${icons[event]} ${labels[event]}: ${userEmail}`,
+    subject: `${icons[event]} ${labels[event]}: ${safeEmail2}`,
     html: `
       <div style="font-family: monospace; max-width: 480px; margin: 0 auto; padding: 32px 24px; background: #0f0d1a; color: #e2e0f0;">
         <p style="font-size: 18px; font-weight: 700; margin-bottom: 20px;">${icons[event]} ${labels[event]}</p>
         <table style="width: 100%; border-collapse: collapse;">
-          <tr><td style="color: #9895ad; padding: 6px 0; width: 120px;">Email</td><td style="color: #e2e0f0;">${userEmail}</td></tr>
-          <tr><td style="color: #9895ad; padding: 6px 0;">Name</td><td style="color: #e2e0f0;">${userName || '—'}</td></tr>
+          <tr><td style="color: #9895ad; padding: 6px 0; width: 120px;">Email</td><td style="color: #e2e0f0;">${safeEmail2}</td></tr>
+          <tr><td style="color: #9895ad; padding: 6px 0;">Name</td><td style="color: #e2e0f0;">${safeName2}</td></tr>
           <tr><td style="color: #9895ad; padding: 6px 0;">From</td><td style="color: #e2e0f0;">${fromPlan}</td></tr>
           <tr><td style="color: #9895ad; padding: 6px 0;">To</td><td style="color: #e2e0f0;">${toPlan}</td></tr>
           <tr><td style="color: #9895ad; padding: 6px 0;">Time</td><td style="color: #e2e0f0;">${now} (RO)</td></tr>

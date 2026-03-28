@@ -23,6 +23,7 @@ export async function POST(req: NextRequest) {
     const limited = await applyRateLimit(generateLimiter, `generate:${userId}`)
     if (limited) return limited
 
+    // Read user info needed for AI prompt and email triggers
     const user = await prisma.user.findUnique({
       where: { id: userId },
       select: { creditsLeft: true, creditsTotal: true, name: true, email: true, plan: true },
@@ -30,13 +31,6 @@ export async function POST(req: NextRequest) {
 
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
-    }
-
-    if (user.creditsLeft <= 0) {
-      return NextResponse.json(
-        { error: 'No credits remaining. Please upgrade your plan.' },
-        { status: 403 }
-      )
     }
 
     const { objectionType, tone, contractValue, relationshipLevel, objective, clientMessage } =
@@ -70,23 +64,43 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Contract value is too long' }, { status: 400 })
     }
 
-    const reply = await generateObjectionResponse({
-      objectionType,
-      tone,
-      contractValue: contractValue || undefined,
-      relationshipLevel: relationshipLevel || undefined,
-      objective: objective || undefined,
-      clientMessage: clientMessage || undefined,
-      userName: user.name || undefined,
+    // Atomically decrement credits with a guard — prevents race conditions where
+    // two concurrent requests both pass the creditsLeft > 0 check
+    const decremented = await prisma.user.updateMany({
+      where: { id: userId, creditsLeft: { gt: 0 } },
+      data: { creditsLeft: { decrement: 1 } },
     })
 
-    // Decrement credits and save generation in one transaction
-    const [updatedUser] = await prisma.$transaction([
-      prisma.user.update({
+    if (decremented.count === 0) {
+      return NextResponse.json(
+        { error: 'No credits remaining. Please upgrade your plan.' },
+        { status: 403 }
+      )
+    }
+
+    // Generate AI response — if it fails, refund the credit
+    let reply: string
+    try {
+      reply = await generateObjectionResponse({
+        objectionType,
+        tone,
+        contractValue: contractValue || undefined,
+        relationshipLevel: relationshipLevel || undefined,
+        objective: objective || undefined,
+        clientMessage: clientMessage || undefined,
+        userName: user.name || undefined,
+      })
+    } catch (aiError) {
+      // Refund the credit so the user isn't charged for a failed generation
+      await prisma.user.update({
         where: { id: userId },
-        data: { creditsLeft: { decrement: 1 } },
-        select: { creditsLeft: true },
-      }),
+        data: { creditsLeft: { increment: 1 } },
+      })
+      throw aiError
+    }
+
+    // Save generation record and get updated credit count
+    const [generatedRecord, updatedUser] = await prisma.$transaction([
       prisma.generation.create({
         data: {
           userId,
@@ -99,7 +113,14 @@ export async function POST(req: NextRequest) {
           generatedReply: reply,
         },
       }),
+      prisma.user.findUniqueOrThrow({
+        where: { id: userId },
+        select: { creditsLeft: true },
+      }),
     ])
+
+    // Suppress unused variable warning
+    void generatedRecord
 
     // Fire-and-forget upsell emails
     if (user.email) {
