@@ -12,6 +12,12 @@ import { OBJECTION_CATEGORIES, TONES, RELATIONSHIP_LEVELS, OBJECTIVES } from '@/
 import { CREDIT_PACKS, PLANS } from '@/lib/plans'
 import { pixelTrack } from '@/lib/meta-pixel'
 
+function gtagEvent(eventName: string, params?: Record<string, unknown>) {
+  if (typeof window !== 'undefined' && typeof (window as any).gtag === 'function') {
+    ;(window as any).gtag('event', eventName, params)
+  }
+}
+
 interface UserData {
   id: string
   name: string | null
@@ -108,6 +114,7 @@ export function DashboardClient() {
   const upgraded = searchParams.get('upgraded')
   const creditsAdded = searchParams.get('credits_added')
   const subscribeFired = useRef(false)
+  const qualifyLeadFired = useRef(false)
   useEffect(() => {
     if (!upgraded && !creditsAdded) return
     let attempts = 0
@@ -127,7 +134,7 @@ export function DashboardClient() {
 
       setUser(data)
 
-      // Fire Subscribe pixel event once when plan change is confirmed
+      // Fire Subscribe pixel + GA4 events once when plan change is confirmed
       if (upgraded && !subscribeFired.current && data.plan && data.plan !== 'free' && data.plan !== initialPlan) {
         const planInfo = PLANS[data.plan as keyof typeof PLANS]
         if (planInfo) {
@@ -137,8 +144,21 @@ export function DashboardClient() {
             predicted_ltv: planInfo.price,
             content_name: data.plan,
           })
+          gtagEvent('purchase', {
+            value: planInfo.price,
+            currency: 'USD',
+            transaction_id: `sub_${Date.now()}`,
+            items: [{ item_name: `withPOISE ${planInfo.name}`, price: planInfo.price, quantity: 1 }],
+          })
+          gtagEvent('close_convert_lead', { plan: data.plan, value: planInfo.price })
           subscribeFired.current = true
         }
+      }
+
+      // GA4: fire purchase for credit pack top-up
+      if (creditsAdded && !subscribeFired.current && initialCreditsTotal !== null && data.creditsTotal !== initialCreditsTotal) {
+        gtagEvent('purchase', { currency: 'USD', content_type: 'credit_pack' })
+        subscribeFired.current = true
       }
 
       // Stop when plan or credits changed, or max attempts reached
@@ -187,6 +207,12 @@ export function DashboardClient() {
       setPoiseSteps(parsePoiseSteps(data.reply))
       setUser(prev => prev ? { ...prev, creditsLeft: data.creditsLeft } : prev)
       fetchHistory()
+
+      // GA4: fire qualify_lead once per session on first successful generation
+      if (!qualifyLeadFired.current) {
+        gtagEvent('qualify_lead')
+        qualifyLeadFired.current = true
+      }
     } catch {
       setError('Something went wrong. Please try again.')
     } finally {
