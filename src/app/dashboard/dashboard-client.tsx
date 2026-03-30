@@ -23,6 +23,7 @@ interface UserData {
   name: string | null
   email: string
   plan: string
+  effectivePlan: string
   creditsLeft: number
   creditsTotal: number
   stripeCustomerId: string | null
@@ -128,15 +129,16 @@ export function DashboardClient() {
 
       // Capture baseline on first poll
       if (attempts === 1) {
-        initialPlan = data.plan
+        initialPlan = data.effectivePlan ?? data.plan
         initialCreditsTotal = data.creditsTotal
       }
 
       setUser(data)
 
       // Fire Subscribe pixel + GA4 events once when plan change is confirmed
-      if (upgraded && !subscribeFired.current && data.plan && data.plan !== 'free' && data.plan !== initialPlan) {
-        const planInfo = PLANS[data.plan as keyof typeof PLANS]
+      const currentPlan = data.effectivePlan ?? data.plan
+      if (upgraded && !subscribeFired.current && currentPlan && currentPlan !== 'free' && currentPlan !== initialPlan) {
+        const planInfo = PLANS[currentPlan as keyof typeof PLANS]
         if (planInfo) {
           pixelTrack('Subscribe', {
             value: planInfo.price,
@@ -150,7 +152,7 @@ export function DashboardClient() {
             transaction_id: `sub_${Date.now()}`,
             items: [{ item_name: `withPOISE ${planInfo.name}`, price: planInfo.price, quantity: 1 }],
           })
-          gtagEvent('close_convert_lead', { plan: data.plan, value: planInfo.price })
+          gtagEvent('close_convert_lead', { plan: currentPlan, value: planInfo.price })
           subscribeFired.current = true
         }
       }
@@ -162,7 +164,7 @@ export function DashboardClient() {
       }
 
       // Stop when plan or credits changed, or max attempts reached
-      const planChanged = initialPlan !== null && data.plan !== initialPlan
+      const planChanged = initialPlan !== null && currentPlan !== initialPlan
       const creditsChanged = initialCreditsTotal !== null && data.creditsTotal !== initialCreditsTotal
       if (planChanged || creditsChanged || attempts >= 10) clearInterval(poll)
     }, 1000)
@@ -250,7 +252,7 @@ export function DashboardClient() {
   }
 
   const noCredits = user ? user.creditsLeft <= 0 : false
-  const isPaidUser = user ? ['starter', 'pro', 'elite'].includes(user.plan) : false
+  const isPaidUser = user ? ['starter', 'pro', 'elite'].includes(user.effectivePlan ?? user.plan) : false
   // Running low: paid users at ≤20% of monthly credits (min threshold 3)
   const runningLow = isPaidUser && user
     ? user.creditsLeft > 0 && user.creditsLeft <= Math.max(3, Math.floor(user.creditsTotal * 0.2))
@@ -332,15 +334,14 @@ export function DashboardClient() {
         </div>
       )}
 
-      {user && user.plan === 'free' && !noCredits && !upgraded && (
+      {user && (user.effectivePlan ?? user.plan) === 'free' && !noCredits && !upgraded && (
         <div className="bg-[var(--color-primary)]/8 border-b border-[var(--color-primary)]/20 px-4 py-2.5 text-center text-sm">
           <span className="text-[var(--color-text-muted)]">
             You&apos;re on the free trial —{' '}
-            <span className="text-[var(--color-text)] font-medium">{user.creditsLeft} credit{user.creditsLeft !== 1 ? 's' : ''} left.</span>
-            {' '}Use all 5 credits to unlock upgrade.{' '}
+            <span className="text-[var(--color-text)] font-medium">{user.creditsLeft} credit{user.creditsLeft !== 1 ? 's' : ''} left.{' '}</span>
           </span>
           <a href="/pricing" className="text-[var(--color-primary)] font-semibold hover:underline">
-            View plans →
+            Upgrade anytime →
           </a>
         </div>
       )}
