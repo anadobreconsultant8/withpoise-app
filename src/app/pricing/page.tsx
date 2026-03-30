@@ -25,7 +25,8 @@ export default function PricingPage() {
         .then(r => r.ok ? r.json() : null)
         .then(data => {
           if (data) {
-            setUserPlan(data.plan)
+            // Use effectivePlan which resolves data inconsistencies (e.g. webhook delays)
+            setUserPlan(data.effectivePlan || data.plan)
             setCreditsLeft(data.creditsLeft)
           }
         })
@@ -63,12 +64,9 @@ export default function PricingPage() {
     { key: 'elite', ...PLANS.elite, popular: false },
   ]
 
-  const freeCreditsLocked = userPlan === 'free' && creditsLeft > 0
-
   function getButtonState(planKey: string) {
     if (!session) return { label: 'Get Started', action: true, style: 'default' }
     if (!userPlan || userPlan === 'free') {
-      if (freeCreditsLocked) return { label: 'Use free credits first', action: false, style: 'locked' }
       return { label: 'Upgrade', action: true, style: 'default' }
     }
     if (userPlan === planKey) return { label: 'Current Plan', action: false, style: 'current' }
@@ -145,11 +143,7 @@ export default function PricingPage() {
                   ))}
                 </ul>
 
-                {btn.style === 'locked' ? (
-                  <div className="w-full py-2.5 rounded-lg text-sm font-semibold text-center bg-[var(--color-border)]/40 text-[var(--color-text-muted)] border border-[var(--color-border)] cursor-not-allowed">
-                    Use your 5 free credits first
-                  </div>
-                ) : btn.action ? (
+                {btn.action ? (
                   <button
                     onClick={() => handleCheckout(plan.key)}
                     disabled={loading === plan.key}

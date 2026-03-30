@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { getPlanByPriceId } from '@/lib/plans'
 
 export async function GET() {
   try {
@@ -32,9 +33,18 @@ export async function GET() {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
+    // If plan is still 'free' but user has an active Stripe subscription,
+    // infer the real plan from stripePriceId to handle webhook delivery delays/failures
+    const effectivePlan =
+      user.plan !== 'free'
+        ? user.plan
+        : user.stripePriceId
+        ? (getPlanByPriceId(user.stripePriceId) ?? 'free')
+        : 'free'
+
     // Never expose passwordHash to client — return boolean instead
     const { passwordHash, ...safeUser } = user
-    return NextResponse.json({ ...safeUser, hasPassword: !!passwordHash })
+    return NextResponse.json({ ...safeUser, hasPassword: !!passwordHash, effectivePlan })
   } catch (error) {
     console.error('[user]', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
