@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
         if (session.mode === 'payment' && session.metadata?.type === 'credit_pack') {
           const userId = session.metadata.userId
           const creditsToAdd = parseInt(session.metadata.credits ?? '0', 10)
-          const VALID_CREDIT_AMOUNTS = CREDIT_PACKS.map(p => p.credits)
+          const VALID_CREDIT_AMOUNTS: number[] = CREDIT_PACKS.map(p => p.credits)
           if (userId && VALID_CREDIT_AMOUNTS.includes(creditsToAdd)) {
             await prisma.user.update({
               where: { id: userId },
