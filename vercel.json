@@ -2,11 +2,11 @@
   "crons": [
     {
       "path": "/api/cron/renewal-reminder",
-      "schedule": "0 9 * * *"
+      "schedule": "0 13 * * *"
     },
     {
       "path": "/api/cron/reengagement",
-      "schedule": "0 10 * * *"
+      "schedule": "0 13 * * *"
     },
     {
       "path": "/api/cron/monthly-report",
