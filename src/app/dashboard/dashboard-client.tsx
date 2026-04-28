@@ -334,7 +334,7 @@ export function DashboardClient() {
         </div>
       )}
 
-      {user && (user.effectivePlan ?? user.plan) === 'free' && !noCredits && !upgraded && (
+      {user && (user.effectivePlan ?? user.plan) === 'free' && !noCredits && !upgraded && user.creditsTotal <= 5 && (
         <div className="bg-[var(--color-primary)]/8 border-b border-[var(--color-primary)]/20 px-4 py-2.5 text-center text-sm">
           <span className="text-[var(--color-text-muted)]">
             You&apos;re on the free trial —{' '}
