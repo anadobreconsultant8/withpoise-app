@@ -16,7 +16,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid plan' }, { status: 400 })
     }
 
-    const priceId = PLANS[planKey as keyof typeof PLANS].priceId
+    // Read price IDs from non-NEXT_PUBLIC_ vars at runtime to avoid build-time inlining
+    const PRICE_ID_MAP: Record<string, string | undefined> = {
+      starter: process.env.STRIPE_STARTER_PRICE_ID,
+      pro:     process.env.STRIPE_PRO_PRICE_ID,
+      elite:   process.env.STRIPE_ELITE_PRICE_ID,
+    }
+    const priceId = PRICE_ID_MAP[planKey]
     if (!priceId) {
       return NextResponse.json({ error: 'Plan price not configured' }, { status: 500 })
     }

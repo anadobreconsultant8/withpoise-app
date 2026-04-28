@@ -1,7 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { stripe } from '@/lib/stripe'
 import { prisma } from '@/lib/prisma'
-import { getPlanByPriceId, getCreditsForPlan, PLANS, CREDIT_PACKS } from '@/lib/plans'
+import { getCreditsForPlan, PLANS, CREDIT_PACKS } from '@/lib/plans'
+import type { PlanName } from '@/lib/plans'
+
+// Runtime lookup — avoids NEXT_PUBLIC_ build-time inlining
+function getPlanByPriceId(priceId: string): PlanName | null {
+  const map: Record<string, PlanName | undefined> = {
+    [process.env.STRIPE_STARTER_PRICE_ID ?? '']: 'starter',
+    [process.env.STRIPE_PRO_PRICE_ID     ?? '']: 'pro',
+    [process.env.STRIPE_ELITE_PRICE_ID   ?? '']: 'elite',
+  }
+  return map[priceId] ?? null
+}
+
+function getCreditPackByPriceIdRuntime(priceId: string): number | null {
+  const map: Record<string, number | undefined> = {
+    [process.env.STRIPE_CREDITS_BOOST_PRICE_ID  ?? '']: 20,
+    [process.env.STRIPE_CREDITS_GROWTH_PRICE_ID ?? '']: 60,
+    [process.env.STRIPE_CREDITS_POWER_PRICE_ID  ?? '']: 120,
+  }
+  return map[priceId] ?? null
+}
 import { sendPaidWelcomeEmail, sendAdminSubscriptionEventEmail } from '@/lib/email'
 import type Stripe from 'stripe'
 
