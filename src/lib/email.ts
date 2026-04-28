@@ -381,7 +381,7 @@ export async function sendPaidWelcomeEmail(email: string, name: string | null, p
   })
 }
 
-export async function sendCreditsLowPaidEmail(email: string, name: string | null, plan: 'starter' | 'pro') {
+export async function sendCreditsLowPaidEmail(email: string, name: string | null, plan: 'starter' | 'pro' | 'elite') {
   const resend = getResend()
   if (!resend) return
 
@@ -393,21 +393,58 @@ export async function sendCreditsLowPaidEmail(email: string, name: string | null
       label: 'Starter',
       creditsLeft: 6,
       total: 30,
-      nextPlan: 'Pro',
-      nextPrice: 79,
-      nextCredits: 100,
+      nextPlan: 'Pro' as string | null,
+      nextPrice: 79 as number | null,
+      nextCredits: 100 as number | null,
     },
     pro: {
       label: 'Pro',
       creditsLeft: 20,
       total: 100,
-      nextPlan: 'Elite',
-      nextPrice: 149,
-      nextCredits: 300,
+      nextPlan: 'Elite' as string | null,
+      nextPrice: 149 as number | null,
+      nextCredits: 300 as number | null,
+    },
+    elite: {
+      label: 'Elite',
+      creditsLeft: 60,
+      total: 300,
+      nextPlan: null,
+      nextPrice: null,
+      nextCredits: null,
     },
   }
 
   const c = config[plan]
+  const creditsUrl = `${BASE_URL}/dashboard#credits`
+
+  const upsellBlock = c.nextPlan !== null
+    ? `
+        <p style="color: #9895ad; line-height: 1.6; margin-bottom: 24px;">
+          If you're handling this volume of objections every month, <strong style="color: #e2e0f0;">${c.nextPlan}</strong> might be a better fit: <strong style="color: #e2e0f0;">${c.nextCredits} responses/month</strong> at $${c.nextPrice}/mo.
+        </p>
+
+        <div style="background: #1e1b2e; border: 2px solid #6366f1; border-radius: 12px; padding: 20px; margin-bottom: 28px;">
+          <p style="color: #e2e0f0; font-weight: 700; margin: 0 0 8px 0;">${c.nextPlan} — $${c.nextPrice}/month</p>
+          <p style="color: #9895ad; margin: 0; font-size: 14px;">${c.nextCredits} responses · All features · Cancel anytime</p>
+        </div>
+
+        <a href="${pricingUrl}" style="display: inline-block; padding: 12px 28px; background: #6366f1; color: white; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 15px;">
+          Upgrade to ${c.nextPlan}
+        </a>`
+    : `
+        <p style="color: #9895ad; line-height: 1.6; margin-bottom: 24px;">
+          You're on our top plan — no upgrade needed. If you need more responses before your cycle resets, grab a one-time credit pack and keep closing.
+        </p>
+
+        <div style="background: #1e1b2e; border: 2px solid #6366f1; border-radius: 12px; padding: 20px; margin-bottom: 28px;">
+          <p style="color: #e2e0f0; font-weight: 700; margin: 0 0 8px 0;">One-time credit packs</p>
+          <p style="color: #9895ad; margin: 0; font-size: 14px;">20 credits for $7 · 60 credits for $17 · No subscription changes</p>
+        </div>
+
+        <a href="${creditsUrl}" style="display: inline-block; padding: 12px 28px; background: #6366f1; color: white; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 15px;">
+          Get more credits
+        </a>`
 
   await resend.emails.send({
     from: FROM,
@@ -427,18 +464,7 @@ export async function sendCreditsLowPaidEmail(email: string, name: string | null
           Hi ${firstName}, you've used ${c.total - c.creditsLeft} of your ${c.total} ${c.label} responses — which means you've been busy closing. Good.
         </p>
 
-        <p style="color: #9895ad; line-height: 1.6; margin-bottom: 24px;">
-          If you're handling this volume of objections every month, <strong style="color: #e2e0f0;">${c.nextPlan}</strong> might be a better fit: <strong style="color: #e2e0f0;">${c.nextCredits} responses/month</strong> at $${c.nextPrice}/mo.
-        </p>
-
-        <div style="background: #1e1b2e; border: 2px solid #6366f1; border-radius: 12px; padding: 20px; margin-bottom: 28px;">
-          <p style="color: #e2e0f0; font-weight: 700; margin: 0 0 8px 0;">${c.nextPlan} — $${c.nextPrice}/month</p>
-          <p style="color: #9895ad; margin: 0; font-size: 14px;">${c.nextCredits} responses · All features · Cancel anytime</p>
-        </div>
-
-        <a href="${pricingUrl}" style="display: inline-block; padding: 12px 28px; background: #6366f1; color: white; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 15px;">
-          Upgrade to ${c.nextPlan}
-        </a>
+        ${upsellBlock}
 
         <p style="color: #9895ad; font-size: 12px; margin-top: 16px;">Your ${c.label} plan renews automatically — no action needed if you want to stay.</p>
 

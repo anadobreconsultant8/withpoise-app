@@ -9,11 +9,12 @@ export async function GET(req: NextRequest) {
   }
 
   const now = new Date()
-  const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+  const firstOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+  const firstOfThisMonth = new Date(now.getFullYear(), now.getMonth(), 1)
 
   const [totalUsers, newUsersThisMonth, planCounts] = await Promise.all([
     prisma.user.count(),
-    prisma.user.count({ where: { createdAt: { gte: firstOfMonth } } }),
+    prisma.user.count({ where: { createdAt: { gte: firstOfLastMonth, lt: firstOfThisMonth } } }),
     prisma.user.groupBy({ by: ['plan'], _count: { _all: true } }),
   ])
 
@@ -25,7 +26,7 @@ export async function GET(req: NextRequest) {
   const totalPaid = counts.starter + counts.pro + counts.elite
   const estimatedMRR = counts.starter * 29 + counts.pro * 79 + counts.elite * 149
 
-  const month = now.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })
+  const month = firstOfLastMonth.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })
 
   await sendAdminMonthlyReport({
     month,

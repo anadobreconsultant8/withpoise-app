@@ -45,11 +45,13 @@ export async function GET(req: NextRequest) {
   }
 
   // Email 6: signed up > 4 days ago, still on free plan, never sent this email
+  // Requires emailSentNoActivity: true to avoid sending both emails in the same cron run
   const stillFreeUsers = await prisma.user.findMany({
     where: {
       plan: 'free',
       createdAt: { lt: fourDaysAgo },
       emailSentReengage: false,
+      emailSentNoActivity: true,
     },
     select: { id: true, email: true, name: true },
   })
