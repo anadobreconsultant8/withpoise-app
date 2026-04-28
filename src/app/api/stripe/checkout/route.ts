@@ -44,7 +44,9 @@ export async function POST(req: NextRequest) {
             items: [{ id: itemId, price: priceId }],
             proration_behavior: 'create_prorations',
           })
-          return NextResponse.json({ url: `${baseUrl}/dashboard?upgraded=true&creditsAdded=1` })
+          // customer.subscription.updated webhook updates the DB — no ?upgraded=true here
+          // since that flag is reserved for the checkout.session.completed flow
+          return NextResponse.json({ url: `${baseUrl}/dashboard` })
         }
 
         // Subscription exists but is not active (cancelled, expired) — clear it and fall through
