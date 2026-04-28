@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { stripe } from '@/lib/stripe'
 import { prisma } from '@/lib/prisma'
-import { getPlanByPriceId, getCreditsForPlan, PLANS } from '@/lib/plans'
+import { getPlanByPriceId, getCreditsForPlan, PLANS, CREDIT_PACKS } from '@/lib/plans'
 import { sendPaidWelcomeEmail, sendAdminSubscriptionEventEmail } from '@/lib/email'
 import type Stripe from 'stripe'
 
@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
         if (session.mode === 'payment' && session.metadata?.type === 'credit_pack') {
           const userId = session.metadata.userId
           const creditsToAdd = parseInt(session.metadata.credits ?? '0', 10)
-          const VALID_CREDIT_AMOUNTS = [20, 60, 120]
+          const VALID_CREDIT_AMOUNTS = CREDIT_PACKS.map(p => p.credits)
           if (userId && VALID_CREDIT_AMOUNTS.includes(creditsToAdd)) {
             await prisma.user.update({
               where: { id: userId },
@@ -124,7 +124,7 @@ export async function POST(req: NextRequest) {
         const newCredits = PLANS[planName].credits
         const user = await prisma.user.findUnique({
           where: { stripeCustomerId: customerId },
-          select: { creditsLeft: true, creditsTotal: true, plan: true, email: true, name: true },
+          select: { creditsLeft: true, creditsTotal: true, plan: true, email: true, name: true, stripeCancelAtPeriodEnd: true },
         })
 
         if (!user) break
@@ -151,7 +151,7 @@ export async function POST(req: NextRequest) {
         if (user.email && user.plan !== planName) {
           const eventType = creditDiff > 0 ? 'upgrade' : subscription.cancel_at_period_end ? 'cancel' : 'downgrade'
           sendAdminSubscriptionEventEmail(eventType, user.email, user.name, user.plan, planName).catch(err => console.error('[webhook] email send failed:', err))
-        } else if (user.email && subscription.cancel_at_period_end !== (user.plan === planName)) {
+        } else if (user.email && subscription.cancel_at_period_end !== user.stripeCancelAtPeriodEnd) {
           const eventType = subscription.cancel_at_period_end ? 'cancel' : 'cancel_resumed'
           sendAdminSubscriptionEventEmail(eventType, user.email, user.name, user.plan, planName).catch(err => console.error('[webhook] email send failed:', err))
         }

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Zap, Check, Star, Loader2 } from 'lucide-react'
 import { Navbar } from '@/components/navbar'
@@ -14,6 +14,7 @@ const PLAN_ORDER = ['starter', 'pro', 'elite'] as const
 export default function PricingPage() {
   const { data: session } = useSession()
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [loading, setLoading] = useState<string | null>(null)
   const [checkoutError, setCheckoutError] = useState<string | null>(null)
   const [userPlan, setUserPlan] = useState<string | null>(null)
@@ -32,6 +33,13 @@ export default function PricingPage() {
         })
     }
   }, [session])
+
+  useEffect(() => {
+    const autoCheckout = searchParams.get('autoCheckout')
+    if (autoCheckout && session && userPlan === 'free') {
+      handleCheckout(autoCheckout)
+    }
+  }, [session, userPlan]) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function handleCheckout(planKey: string) {
     if (!session) {

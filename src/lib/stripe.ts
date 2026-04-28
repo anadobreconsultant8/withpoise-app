@@ -2,7 +2,9 @@
 import Stripe from 'stripe'
 import { prisma } from './prisma'
 
-export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'placeholder', {
+const stripeKey = process.env.STRIPE_SECRET_KEY
+if (!stripeKey) throw new Error('[stripe] STRIPE_SECRET_KEY is not set')
+export const stripe = new Stripe(stripeKey, {
   apiVersion: '2025-02-24.acacia' as const,
 })
 

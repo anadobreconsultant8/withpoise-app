@@ -2,7 +2,7 @@ import { auth } from '@/lib/auth'
 import { NextResponse } from 'next/server'
 
 // Routes that require authentication
-const PROTECTED_ROUTES = ['/dashboard']
+const PROTECTED_ROUTES = ['/dashboard', '/account']
 
 export default auth((req) => {
   const isLoggedIn = !!req.auth

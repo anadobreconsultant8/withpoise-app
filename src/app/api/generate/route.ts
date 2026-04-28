@@ -133,6 +133,8 @@ export async function POST(req: NextRequest) {
         sendCreditsLowPaidEmail(user.email, user.name, 'starter').catch(() => {})
       } else if (user.plan === 'pro' && left === 20) {
         sendCreditsLowPaidEmail(user.email, user.name, 'pro').catch(() => {})
+      } else if (user.plan === 'elite' && left === 60) {
+        sendCreditsLowPaidEmail(user.email, user.name, 'elite').catch(() => {})
       }
     }
 

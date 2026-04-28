@@ -44,20 +44,6 @@ export function RegisterClient() {
   const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
 
-  async function redirectToCheckout(planKey: string) {
-    const res = await fetch('/api/stripe/checkout', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ planKey }),
-    })
-    const data = await res.json()
-    if (data.url) {
-      window.location.href = data.url
-    } else {
-      router.push('/dashboard')
-    }
-  }
-
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError('')
@@ -93,7 +79,7 @@ export function RegisterClient() {
       pixelTrack('CompleteRegistration', { content_name: 'free' })
 
       if (selectedPlan) {
-        await redirectToCheckout(selectedPlan)
+        router.push(`/pricing?autoCheckout=${selectedPlan}`)
       } else {
         router.push('/dashboard')
       }
