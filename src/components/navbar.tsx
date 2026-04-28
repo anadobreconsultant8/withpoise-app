@@ -46,6 +46,15 @@ export function Navbar({ creditsLeft, creditsTotal }: NavbarProps) {
           </span>
         </Link>
 
+        {/* Center nav — visitors only */}
+        {!session && (
+          <div className="hidden md:flex items-center gap-6">
+            <Link href="/pricing" className="text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors">Pricing</Link>
+            <Link href="/blog" className="text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors">Blog</Link>
+            <Link href="/about" className="text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors">About</Link>
+          </div>
+        )}
+
         {/* Right side */}
         <div className="flex items-center gap-3">
           {session ? (
